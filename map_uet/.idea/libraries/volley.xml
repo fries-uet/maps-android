@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="volley">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Desktop/SMAC 2015/fpt-smac-aiml-apis-demo/libs/volley.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/SMAC 2015/fpt-smac-aiml-apis-demo/libs/android-support-v4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
