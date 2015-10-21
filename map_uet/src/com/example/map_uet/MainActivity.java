@@ -68,7 +68,7 @@ public class MainActivity extends Activity implements OnClickListener {
 //                addTextToConversation("no",false);
 
                 //Nhan dang cau noi vua nhan vao -> text
-//                startRecognizerIntent();
+                startRecognizerIntent();
 
 //                demo
                 final String result = "hi";
