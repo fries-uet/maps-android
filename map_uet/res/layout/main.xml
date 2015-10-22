@@ -3,8 +3,8 @@
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:padding="5dp"
-        >
+              android:padding="5dp">
+
     <TableRow android:layout_height="wrap_content"
               android:layout_width="match_parent">
         <Button
@@ -21,6 +21,20 @@
                 android:id="@+id/btn_clear"/>
 
     </TableRow>
+
+    <TableRow android:layout_height="wrap_content"
+              android:layout_width="match_parent">
+        <EditText
+                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:hint="Your voice" android:id="@+id/edt_voicetext"/>
+        <Button
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:text="Add text" android:id="@+id/btn_addtext"/>
+    </TableRow>
+
     <ListView
             android:layout_width="match_parent"
             android:layout_height="0dp"

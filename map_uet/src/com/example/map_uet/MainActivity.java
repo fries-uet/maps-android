@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 import com.android.volley.AuthFailureError;
@@ -17,6 +18,7 @@ import com.android.volley.Request.Method;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -29,17 +31,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends Activity implements OnClickListener {
+    public static final String SAMPLE_1 = "cho tôi đến";
+    public static final String SAMPLE_2 = "tôi muốn đi đến";
+    public static final String SAMPLE_4 = "chỉ tôi đến";
+    public static final String SAMPLE_5 = "chỉ cho tôi đến";
+    public static final String SAMPLE_6 = "chỉ cho tôi đi đến";
+    public static final String SAMPLE_3 = "tôi muốn đi từ";
     private static final int KEY_CODE_RECOGNIZER_ACTIVITY = 1824;
+    public final int stateMP_Error = 0;
+    public final int stateMP_NotStarter = 1;
+    public int stateMediaPlayer;
+    public MediaPlayer mediaPlayer;
     /**
      * Called when the activity is first created.
      */
-    private Button btnClick, btnClear;
+    private Button btnClick, btnClear, btnVoiceText;
+    private EditText edtVoiceText;
     private ListView lvChatMain;
     private ListViewChatAdapter mAdapter;
     private String TAG = "MainActivity";
     private String mToken = "775ced42-8100-48ef-add1-a7cc6be261ab";
     private String mBotId = "562677f5e4b07d327ad8358f";
     private String mHostAIML = "http://118.69.135.27";
+    private String mHostTTS = "http://118.69.135.22"; //118.69.135.22
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -52,12 +66,15 @@ public class MainActivity extends Activity implements OnClickListener {
     private void initViews() {
         btnClick = (Button) findViewById(R.id.btn_click);
         btnClear = (Button) findViewById(R.id.btn_clear);
+        btnVoiceText = (Button) findViewById(R.id.btn_addtext);
+        edtVoiceText = (EditText) findViewById(R.id.edt_voicetext);
         lvChatMain = (ListView) findViewById(R.id.lv_chatmain);
 
         mAdapter = new ListViewChatAdapter(this);
         lvChatMain.setAdapter(mAdapter);
         btnClick.setOnClickListener(this);
         btnClear.setOnClickListener(this);
+        btnVoiceText.setOnClickListener(this);
     }
 
     @Override
@@ -71,17 +88,31 @@ public class MainActivity extends Activity implements OnClickListener {
                 startRecognizerIntent();
 
 //                demo
-                final String result = "hi";
-                addTextToConversation(result, true);
+//                final String result = "hi";
+//                addTextToConversation(result, true);
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        if (!result.equals("")) {
+//                            getAnswer(result);
+//                        }
+//                    }
+//                }).start();
+
+                break;
+
+            case R.id.btn_addtext:
+                final String voiceText = edtVoiceText.getText().toString();
+                addTextToConversation(voiceText, true);
+
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        if (!result.equals("")) {
-                            getAnswer(result);
+                        if (!voiceText.equals("")) {
+                            getAnswer(voiceText);
                         }
                     }
                 }).start();
-
                 break;
 
             case R.id.btn_clear:
@@ -89,6 +120,15 @@ public class MainActivity extends Activity implements OnClickListener {
                 break;
         }
     }
+
+    private boolean isRequestFindRoad(String request) {
+        return request.contains(SAMPLE_1) || request.contains(SAMPLE_2) ||
+                request.contains(SAMPLE_3) || request.contains(SAMPLE_4) || request.contains(SAMPLE_5) ||
+                request.contains(SAMPLE_6);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // TTS
 
     private void addTextToConversation(String text, boolean type) {
         mAdapter.addItem(text, type);
@@ -148,6 +188,41 @@ public class MainActivity extends Activity implements OnClickListener {
     }
 
     public void getAnswer(String question) {
+        // neu la menh lenh chi duong thi goi ham phan tich GG map
+        String startLocation = "";
+        String endLocation = "";
+        if (isRequestFindRoad(question)) {
+            if (question.contains(SAMPLE_1)) {
+                startLocation = "đây";
+//                endLocation = question.substring(SAMPLE_1.length() + 1);
+            }
+            if (question.contains(SAMPLE_3)) {
+                startLocation = question.substring(SAMPLE_3.length() + 1, question.indexOf("đến") - 1);
+                ;
+//                endLocation = question.substring(startLocation.length() + SAMPLE_3.length() + 6);
+            }
+            if (question.contains(SAMPLE_2)) {
+                startLocation = "đây";
+//                endLocation = question.substring(SAMPLE_2.length() + 1);
+            }
+            if (question.contains(SAMPLE_4)) {
+                startLocation = "đây";
+//                endLocation = question.substring(SAMPLE_4.length() + 1);
+            }
+            if (question.contains(SAMPLE_5)) {
+                startLocation = "đây";
+//                endLocation = question.substring(SAMPLE_5.length() + 1);
+            }
+            if (question.contains(SAMPLE_6)) {
+                startLocation = "đây";
+//                endLocation = question.substring(SAMPLE_6.length() + 1);
+            }
+
+            endLocation = question.substring(question.indexOf("đến") + 4);
+            addTextToConversation(startLocation + "," + endLocation, false);
+            return;
+        }
+
         String s = getBotChatApi(question);
         if (s == null) return;
         Log.i(TAG, s);
@@ -159,18 +234,23 @@ public class MainActivity extends Activity implements OnClickListener {
                         Toast.makeText(MainActivity.this, response.toString(),
                                 Toast.LENGTH_LONG).show();
                         Log.i(TAG, response.toString());
-                        int start = response.toString().indexOf("response") + 11;
-                        int end = response.toString().indexOf("botname") - 3;
-                        final String botAnswer = response.toString().substring(start,end);
-                        addTextToConversation(botAnswer,false);
+//                        int start = response.toString().indexOf("response") + 11;
+//                        int end = response.toString().indexOf("botname") - 3;
+//                        final String botAnswer = response.toString().substring(start,end);
+                        try {
+                            final String botAnswer = response.getString("response");
+                            addTextToConversation(botAnswer, false);
 //                        speakTTS(botAnswer);
 
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                speakTTS(botAnswer);
-                            }
-                        }).start();
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    speakTTS(botAnswer);
+                                }
+                            }).start();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
 
                     }
                 }, new Response.ErrorListener() {
@@ -186,22 +266,16 @@ public class MainActivity extends Activity implements OnClickListener {
                 return headers;
             }
         };
-        if (SmacApplication.getInstance() != null)
-        {
+        if (SmacApplication.getInstance() != null) {
             SmacApplication.getInstance().addToRequestQueue(jsonObjRequest, "jsonobject_request");
         } else {
             Log.i(TAG, "SmacApplication is null");
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // TTS
-
     public void stopSpeakVi() {
         mediaPlayer.stop();
     }
-
-    private String mHostTTS = "http://118.69.135.22"; //118.69.135.22
 
     @SuppressWarnings("deprecation")
     public void speakTTS(String msg) {
@@ -209,6 +283,7 @@ public class MainActivity extends Activity implements OnClickListener {
         Log.i(TAG, "Da nhan text");
         downloadFile(URL, "sdcard/sound.wav");
     }
+
     public void speakVi(final String filePath) {
         runOnUiThread(new Runnable() {
             @Override
@@ -218,6 +293,7 @@ public class MainActivity extends Activity implements OnClickListener {
             }
         });
     }
+
     public void downloadFile(final String sURL, final String filePath) {
         try {
             URL url = new URL(sURL);
@@ -247,10 +323,6 @@ public class MainActivity extends Activity implements OnClickListener {
         }
     }
 
-    public int stateMediaPlayer;
-    public final int stateMP_Error = 0;
-    public final int stateMP_NotStarter = 1;
-    public MediaPlayer mediaPlayer;
     public void initMediaPlayer(String path) {
         String PATH_TO_FILE = path;
         mediaPlayer = new MediaPlayer();
