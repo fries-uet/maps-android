@@ -56,14 +56,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private String TAG = "MapsActivity";
 
-    // http://tutran.net/v1/direction/byCoordinates/origin=21.033205,105.745402&destination=21.033205,105.758126
+
+
+    private static String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";
+
+    // API: TEXT - TEXT
     private static String PRE_URL_1 = "http://tutran.net/v1/direction/byText/";
     private static String ORIGIN_URL_1 = "origin=";
     private static String DESTINATION_URL_1 = "&destination=";
 
+    // API: LATLNG - LATLNG
+    // http://tutran.net/v1/direction/byCoordinates/origin=21.033205,105.745402&destination=21.033205,105.758126
     private static String PRE_URL = "http://tutran.net/v1/direction/byCoordinates/";
     private static String ORIGIN_URL = "origin=";
     private static String DESTINATION_URL = "&destination=";
+
+    // API: LATLNG - TEXT
+    // http://tutran.net/v1/direction/byMixed/origin=21.033196,105.745296&destination=Quan%20Hoa,%20C%E1%BA%A7u%20Gi%E1%BA%A5y
+    private static String PRE_URL_3 = "http://tutran.net/v1/direction/byMixed/";
+    private static String ORIGIN_URL_3 = "origin=";
+    private static String DESTINATION_URL_3 = "&destination=";
+
 
     private ArrayList<LatLng> listLatLng = new ArrayList<>();
 
@@ -592,7 +605,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         new ReadText("Bạn đang đi từ " + origin + " tới " + destionation).run();//---------------------------------------------------
 
         // Encode and Get URL
-        String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";
         String url;
         url =   PRE_URL_1 +
                 ORIGIN_URL_1 +
@@ -673,8 +685,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     // abcxyzTu liem , Ha Noi
                                     String start = botAnswer.substring(TAG_FIND_ROAD.length(), botAnswer.indexOf(",") - 1);
                                     String end = botAnswer.substring(botAnswer.indexOf(start) + start.length() + 3);
-
-                                    Log.i(TAG, start + " " + end);
+                                    String url = "";
+                                    if (start.equalsIgnoreCase("đây")){
+                                        Location location = mMap.getMyLocation();
+                                        url =  PRE_URL_3 +
+                                                ORIGIN_URL_3 +
+                                                location.getLatitude() + "," + location.getLongitude() +
+                                                DESTINATION_URL_3 +
+                                                Uri.encode(end, ALLOWED_URI_CHARS);
+                                    }else {
+                                        url =  PRE_URL_1 +
+                                                ORIGIN_URL_1 +
+                                                Uri.encode(start, ALLOWED_URI_CHARS) +
+                                                DESTINATION_URL_1 +
+                                                Uri.encode(end, ALLOWED_URI_CHARS);
+                                    }
+                                    Log.i(TAG, "Direction: " + start + " - " + end);
+                                    Log.i(TAG, "url = " + url);
+                                    new getData().execute(url);
+                                }else{      //
+                                    Log.i(TAG, "Khong tim thay dia diem!");
                                 }
                                 // Noi TTS
                             new Thread(new Runnable() {
