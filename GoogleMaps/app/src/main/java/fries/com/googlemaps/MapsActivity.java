@@ -80,11 +80,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private ArrayList<LatLng> listLatLng = new ArrayList<>();
 
-    Polyline polylineFinal = null;
-    PolylineOptions polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
+    private Polyline polylineFinal = null;
+    private PolylineOptions polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
 
     private LatLng originLatLng = null, destionationLatLng = null;
     private String originName = "",     destionationName = "";
+
 
     private FloatingActionButton    fabRecordVoice,
                                     fabPickLocation;
@@ -140,7 +141,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //                Toast.makeText(MapsActivity.this,"Location is changed: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
                 LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                 CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
-                mMap.animateCamera(cameraUpdate);
+//                mMap.animateCamera(cameraUpdate);
                 stepsDirection.checkLocationAndSpeak(currentLatLng);
             }
         });
@@ -364,6 +365,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addPolyline(polylineOptions);
     }
 
+    private void deleteMarkerAndPolyline(){
+        mMap.clear();
+        polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
+    }
 
 
 
@@ -428,6 +433,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     return;
                 }
 
+                // New Polyline
+                polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
+
                 JSONObject origin = json.getJSONObject("origin");
                 JSONObject destination = json.getJSONObject("destination");
                 Toast.makeText(MapsActivity.this,
@@ -487,6 +495,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (typeOfSourceData.equals("coordinates")){
                 return;
             }
+
+            // Clear marker
+            mMap.clear();
             // Origin
             JSONObject origin = json.getJSONObject("origin");
             JSONObject geo = origin.getJSONObject("geo");
@@ -622,6 +633,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+//    private void
+
 
     //-------------------------------------------------- MInh
     // cho----------------------------------
@@ -663,7 +676,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void getAnswer(String question) {
         String s = getBotChatApi(question);
         if (s == null) return;
-        Log.i(TAG, s);
+//        Log.i(TAG, s);
         JsonObjectRequest jsonObjRequest = new JsonObjectRequest(Request.Method.GET,
                 s, null,
                 new Response.Listener<JSONObject>() {
@@ -671,7 +684,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     public void onResponse(JSONObject response) {
                         Toast.makeText(MapsActivity.this, response.toString(),
                                     Toast.LENGTH_LONG).show();
-                            Log.i(TAG, response.toString());
+                            Log.i(TAG, "Response JSON = " + response.toString());
 //                        int start = response.toString().indexOf("response") + 11;
 //                        int end = response.toString().indexOf("botname") - 3;
 //                        final String botAnswer = response.toString().substring(start,end);
@@ -679,6 +692,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 // lay dia diem (text: day, dia diem)
 
                                 final String botAnswer = response.getString("response");
+                                Log.i(TAG, "bot Answer = " + botAnswer);
                                 if(botAnswer.contains(TAG_FIND_ROAD)){
                                     // xu li lo cation
                                     // abcxyzDay , Cau Giay
@@ -693,26 +707,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                                 location.getLatitude() + "," + location.getLongitude() +
                                                 DESTINATION_URL_3 +
                                                 Uri.encode(end, ALLOWED_URI_CHARS);
+                                        speakText("Đi đến " + end);
                                     }else {
                                         url =  PRE_URL_1 +
                                                 ORIGIN_URL_1 +
                                                 Uri.encode(start, ALLOWED_URI_CHARS) +
                                                 DESTINATION_URL_1 +
                                                 Uri.encode(end, ALLOWED_URI_CHARS);
+                                        speakText("Đi từ " + start + " đến " + end);
                                     }
                                     Log.i(TAG, "Direction: " + start + " - " + end);
                                     Log.i(TAG, "url = " + url);
                                     new getData().execute(url);
                                 }else{      //
                                     Log.i(TAG, "Khong tim thay dia diem!");
+                                    speakText(botAnswer);
                                 }
                                 // Noi TTS
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    speakTTS(botAnswer);
-                                }
-                            }).start();
+//                            speakText(botAnswer);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -736,6 +748,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             Log.i(TAG, "SmacApplication is null");
         }
+    }
+
+    public void speakText(final String text){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                speakTTS(text);
+            }
+        }).start();
     }
 
     public void stopSpeakVi() {
