@@ -432,7 +432,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     return;
                 }
 
-                if (json.getString("type").equalsIgnoreCase("coordinates")){
+                if (json.getString("type").equalsIgnoreCase("coordinates") ||
+                        json.getString("type").equalsIgnoreCase("text") ||
+                        json.getString("type").equalsIgnoreCase("coor_text")){
                     // New Polyline
                     polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
 
@@ -446,13 +448,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     ).show();
 
                     JSONObject info = json.getJSONObject("info");
+
                     Toast.makeText(MapsActivity.this,
-                        "Step " + i +
-                            "\nDistance = " + step.getString("distance") +
-                            "\nManeuver = " + step.getString("maneuver") +
-                            "\nText = "     + instructions.getString("text"),
-                        Toast.LENGTH_LONG
-                    );//.show();
                             "info:\nsummary = " + info.getString("summary") +
                                     "\n distance = " + info.getString("distance") +
                                     "\n duration = " + info.getString("duration")
@@ -460,34 +457,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     ).show();
 
 
-                    JSONArray polylines = step.getJSONArray("polyline");
-                    drawPolyLineDirection(polylines);
-                    JSONObject firstPointInStep = polylines.getJSONObject(0);
-                    LatLng finalLatLng = new LatLng(firstPointInStep.getDouble("lat"), firstPointInStep.getDouble("lng"));
-                    stepsDirection.addStepLatLng(new Step(finalLatLng, instructions.getString("text"), step.getString("maneuver")));
-                }
-                    drawMarkerOriginAndDestination(json);
-
                     JSONArray steps = json.getJSONArray("steps");
-                    for (int i=0; i<steps.length(); i++){
+                    for (int i=0; i<steps.length(); i++) {
                         JSONObject step = steps.getJSONObject(i);
                         JSONObject instructions = step.getJSONObject("instructions");
+
                         Toast.makeText(MapsActivity.this,
                                 "Step " + i +
                                         "\nDistance = " + step.getString("distance") +
                                         "\nManeuver = " + step.getString("maneuver") +
-                                        "\nText = "     + instructions.getString("text"),
+                                        "\nText = " + instructions.getString("text"),
                                 Toast.LENGTH_LONG
-                        ).show();
-
-                        drawPolyLineDirection(instructions.getString("text"), step.getJSONArray("polyline"));
+                        );//.show();
+                        JSONArray polylines = step.getJSONArray("polyline");
+                        drawPolyLineDirection(polylines);
+                        JSONObject firstPointInStep = polylines.getJSONObject(0);
+                        LatLng finalLatLng = new LatLng(firstPointInStep.getDouble("lat"), firstPointInStep.getDouble("lng"));
+                        stepsDirection.addStepLatLng(new Step(finalLatLng, instructions.getString("text"), step.getString("maneuver")));
                     }
+
+                    drawMarkerOriginAndDestination(json);
+
 //                polylineFinal =
                     mMap.addPolyline(polylineOptions);
                 }
 
                 if (json.getString("type").equalsIgnoreCase("post_traffic")){
                     Toast.makeText(MapsActivity.this, "Da thong bao trang thai thanh cong", Toast.LENGTH_SHORT).show();
+                    speakText("Cám ơn bạn đã phản hồi");
                 }
 
             } catch (JSONException e) {
@@ -496,7 +493,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
         }
-
+}
         private void drawPolyLineDirection(JSONArray array) throws JSONException{
             if (array.length()<=0) return;
             for (int i=0; i<array.length(); i++){
@@ -535,7 +532,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .flat(true));
         }
 
-    }
 
     //------------------------------------------------------------------------------------------
     public void onPickButtonClick(View v) {
@@ -613,7 +609,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public MediaPlayer mediaPlayer;
 
     private String mToken = "775ced42-8100-48ef-add1-a7cc6be261ab";
-    private String mBotId = "562fa5e6e4b07d327ad85788";
+    private String mBotId = "5631edbbe4b07d327ad8628c";
     private String mHostAIML = "http://118.69.135.27";
     private String mHostTTS = "http://118.69.135.22";
 

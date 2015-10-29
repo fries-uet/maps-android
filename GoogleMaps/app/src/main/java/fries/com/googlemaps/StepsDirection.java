@@ -79,13 +79,17 @@ public class StepsDirection {
     }
 
     private void goToNextStep(){
-        String value = "Chuẩn bị " + listSteps.get(currentStep).getText();
+        String value = "Chuẩn bị " + directStep(currentStep);
         Toast.makeText(mContext, "Direct: " + value, Toast.LENGTH_SHORT).show();
-        if (currentStep+1 < listSteps.size()) currentStep++;
         new ReadText(value).run();
+        currentStep++;
+        if (currentStep>=listSteps.size()){
+            isDirecting = false;
+            Toast.makeText(mContext, "Ket thuc chi duong!", Toast.LENGTH_SHORT).show();
+        }
     }
     private void preparingGoToNextStep(int distance){
-        String value = "Còn " + distance + " mét nữa thì " + listSteps.get(currentStep).getText();
+        String value = "Còn " + distance + " mét nữa thì " + directStep(currentStep);
         Toast.makeText(mContext, "Direct: " + value, Toast.LENGTH_SHORT).show();
         new ReadText(value).run();
     }
@@ -106,7 +110,8 @@ public class StepsDirection {
     }
 
     private String directStep(int pos){
-        return listSteps.get(pos).getText();
+        if (pos>=0 && pos<listSteps.size()) return listSteps.get(pos).getText();
+        else return "";
     }
 
 }
