@@ -45,9 +45,9 @@ public class StepsDirection {
         LatLng currentLatLngStep = listSteps.get(currentStep).getLatLng();
         int distance = (int) distance(currentLatLng.latitude, currentLatLng.longitude, currentLatLngStep.latitude, currentLatLngStep.longitude);
 
-        if (distance<preDistance){
-
-        }
+//        if (distance<preDistance){
+//
+//        }
 
         // Case
         if (distance<=20){          // Next step

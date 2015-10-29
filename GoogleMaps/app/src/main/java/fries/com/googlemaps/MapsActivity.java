@@ -52,13 +52,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         GoogleMap.OnMyLocationButtonClickListener,
         GoogleMap.OnMapClickListener{
 
-    private static final int REQUEST_PLACE_PICKER = 1111;
     private GoogleMap mMap;
-    private String TAG = "MapsActivity";
+    private static String TAG = "MapsActivity";
 
+    private static final int REQUEST_PLACE_PICKER = 1111;
 
-
-    private static String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";
+    private static String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";    // Encode URL
 
     // API: TEXT - TEXT
     private static String PRE_URL_1 = "http://tutran.net/v1/direction/byText/";
@@ -80,7 +79,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private ArrayList<LatLng> listLatLng = new ArrayList<>();
 
-    private Polyline polylineFinal = null;
     private PolylineOptions polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
 
     private LatLng originLatLng = null, destionationLatLng = null;
@@ -116,8 +114,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * installed Google Play services and returned to the app.
      */
 
-    LocationManager lm;
-    LocationListener locationListener;
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -130,15 +126,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Show rationale and request permission.
         }
 
-//        MyLocationButtonClick locationBtn = new MyLocationButtonClick(MapsActivity.this, mMap);
-//        mMap.setOnMyLocationButtonClickListener(locationBtn);
 
         mMap.setOnMapClickListener(this);
 
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
-//                Toast.makeText(MapsActivity.this,"Location is changed: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
                 LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                 CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
 //                mMap.animateCamera(cameraUpdate);
@@ -251,7 +244,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (originLatLng == null){                                      // First Click
             // Clear MArker and Polyline
             mMap.clear();
-            if (polylineFinal!=null) polylineFinal.remove();
+//            if (polylineFinal!=null) polylineFinal.remove();
 
             originLatLng    = latLng;
             originName      = address.toString();
@@ -469,7 +462,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     drawPolyLineDirection(instructions.getString("text"), step.getJSONArray("polyline"));
                 }
-                polylineFinal = mMap.addPolyline(polylineOptions);
+//                polylineFinal =
+                        mMap.addPolyline(polylineOptions);
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -493,7 +487,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         private void drawMarkerOriginAndDestination(JSONObject json) throws JSONException{
             String typeOfSourceData = json.getString("type");
             if (typeOfSourceData.equals("coordinates")){
-                return;
+//                return;
             }
 
             // Clear marker
@@ -646,31 +640,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 final String botAnswer = response.getString("response");
                                 Log.i(TAG, "bot Answer = " + botAnswer);
                                 if(botAnswer.contains(TAG_FIND_ROAD)){
-                                    // xu li lo cation
-                                    // abcxyzDay , Cau Giay
-                                    // abcxyzTu liem , Ha Noi
-                                    String start = botAnswer.substring(TAG_FIND_ROAD.length(), botAnswer.indexOf(",") - 1);
-                                    String end = botAnswer.substring(botAnswer.indexOf(start) + start.length() + 3);
-                                    String url = "";
-                                    if (start.equalsIgnoreCase("đây")){
-                                        Location location = mMap.getMyLocation();
-                                        url =  PRE_URL_3 +
-                                                ORIGIN_URL_3 +
-                                                location.getLatitude() + "," + location.getLongitude() +
-                                                DESTINATION_URL_3 +
-                                                Uri.encode(end, ALLOWED_URI_CHARS);
-                                        speakText("Đi đến " + end);
-                                    }else {
-                                        url =  PRE_URL_1 +
-                                                ORIGIN_URL_1 +
-                                                Uri.encode(start, ALLOWED_URI_CHARS) +
-                                                DESTINATION_URL_1 +
-                                                Uri.encode(end, ALLOWED_URI_CHARS);
-                                        speakText("Đi từ " + start + " đến " + end);
-                                    }
-                                    Log.i(TAG, "Direction: " + start + " - " + end);
-                                    Log.i(TAG, "url = " + url);
-                                    new getData().execute(url);
+                                    findRoadBotChat(botAnswer);
                                 }else{      //
                                     Log.i(TAG, "Khong tim thay dia diem!");
                                     speakText(botAnswer);
@@ -700,6 +670,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             Log.i(TAG, "SmacApplication is null");
         }
+    }
+
+    private void findRoadBotChat(String botAnswer){
+        // xu li lo cation
+        // abcxyzDay , Cau Giay
+        // abcxyzTu liem , Ha Noi
+        String start = botAnswer.substring(TAG_FIND_ROAD.length(), botAnswer.indexOf(",") - 1);
+        String end = botAnswer.substring(botAnswer.indexOf(start) + start.length() + 3);
+        String url = "";
+        if (start.equalsIgnoreCase("đây")){
+            Location location = mMap.getMyLocation();
+            url =  PRE_URL_3 +
+                    ORIGIN_URL_3 +
+                    location.getLatitude() + "," + location.getLongitude() +
+                    DESTINATION_URL_3 +
+                    Uri.encode(end, ALLOWED_URI_CHARS);
+            speakText("Đi đến " + end);
+        }else {
+            url =  PRE_URL_1 +
+                    ORIGIN_URL_1 +
+                    Uri.encode(start, ALLOWED_URI_CHARS) +
+                    DESTINATION_URL_1 +
+                    Uri.encode(end, ALLOWED_URI_CHARS);
+            speakText("Đi từ " + start + " đến " + end);
+        }
+        Log.i(TAG, "Direction: " + start + " - " + end);
+        Log.i(TAG, "url = " + url);
+        new getData().execute(url);
+        //------------------------------------------------------- Test Dialog-------------------------------------------------------
+        AlertDialog.Builder alerDialog = new AlertDialog.Builder(this);
+        alerDialog.setTitle("Direction:");
+        alerDialog.setMessage(start + " -> " + end);
+//        alerDialog.show();
+        //--------------------------------------------------
     }
 
     public void speakText(final String text){
