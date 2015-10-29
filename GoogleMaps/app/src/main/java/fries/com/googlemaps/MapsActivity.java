@@ -52,8 +52,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         GoogleMap.OnMyLocationButtonClickListener,
         GoogleMap.OnMapClickListener{
 
-    private static final String TAG_NOTIFICATION_CONGESTION = "tacduong";
-    private static final String TAG_NOTIFICATION_OPEN = "hettacduong";
+    private static final String TAG_NOTIFICATION_CONGESTION = "congestion";
+    private static final String TAG_NOTIFICATION_OPEN = "open";
     private GoogleMap mMap;
     private static String TAG = "MapsActivity";
 
@@ -437,6 +437,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         json.getString("type").equalsIgnoreCase("coor_text")){
                     // New Polyline
                     polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
+                    stepsDirection = new StepsDirection(MapsActivity.this);
 
                     JSONObject origin = json.getJSONObject("origin");
                     JSONObject destination = json.getJSONObject("destination");
@@ -455,7 +456,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     "\n duration = " + info.getString("duration")
                             , Toast.LENGTH_LONG
                     ).show();
-
 
                     JSONArray steps = json.getJSONArray("steps");
                     for (int i=0; i<steps.length(); i++) {
@@ -484,6 +484,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 if (json.getString("type").equalsIgnoreCase("post_traffic")){
                     Toast.makeText(MapsActivity.this, "Da thong bao trang thai thanh cong", Toast.LENGTH_SHORT).show();
+                    Log.i(TAG, "Da thong bao trang thai thanh cong");
                     speakText("Cám ơn bạn đã phản hồi");
                 }
 
@@ -609,7 +610,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public MediaPlayer mediaPlayer;
 
     private String mToken = "775ced42-8100-48ef-add1-a7cc6be261ab";
-    private String mBotId = "5631edbbe4b07d327ad8628c";
+    private String mBotId = "5632583be4b07d327ad8673f";
     private String mHostAIML = "http://118.69.135.27";
     private String mHostTTS = "http://118.69.135.22";
 
@@ -661,10 +662,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                                 if(botAnswer.contains(TAG_FIND_ROAD)){
                                     findRoadBotChat(botAnswer);
-                                } else if (botAnswer.contains(TAG_NOTIFICATION_CONGESTION)){
-                                    notificationRoadStatus(TAG_NOTIFICATION_CONGESTION);
                                 } else if (botAnswer.contains(TAG_NOTIFICATION_OPEN)){
-                                    notificationRoadStatus(TAG_NOTIFICATION_OPEN);
+                                    notificationRoadStatus("open");
+                                } else if (botAnswer.contains(TAG_NOTIFICATION_CONGESTION)){
+                                    notificationRoadStatus("congestion");
                                 }else{
                                     Log.i(TAG, "Khong tim thay dia diem!");
                                     speakText(botAnswer);
@@ -710,15 +711,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     location.getLatitude() + "," + location.getLongitude() +
                     DESTINATION_URL_3 +
                     Uri.encode(end, ALLOWED_URI_CHARS);
-            speakText("Đi đến " + end);
         }else {
             url =  PRE_URL_1 +
                     ORIGIN_URL_1 +
                     Uri.encode(start, ALLOWED_URI_CHARS) +
                     DESTINATION_URL_1 +
                     Uri.encode(end, ALLOWED_URI_CHARS);
-            speakText("Đi từ " + start + " đến " + end);
         }
+        speakText("Đi từ " + start + " đến " + end);
         Log.i(TAG, "Direction: " + start + " - " + end);
         Log.i(TAG, "url = " + url);
         new getData().execute(url);
@@ -812,6 +812,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Location mLocation = mMap.getMyLocation();
 
         String url = PRE_URL_4 + status + "/" + LOCATION_URL + mLocation.getLatitude() + "," + mLocation.getLongitude();
+        Log.i(TAG, "Phan hoi tinh hinh giao thong: " + url);
         new getData().execute(url);
     }
 
