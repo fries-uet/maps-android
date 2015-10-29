@@ -52,6 +52,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         GoogleMap.OnMyLocationButtonClickListener,
         GoogleMap.OnMapClickListener{
 
+    private static final String TAG_NOTIFICATION_CONGESTION = "tacduong";
+    private static final String TAG_NOTIFICATION_OPEN = "hettacduong";
     private GoogleMap mMap;
     private static String TAG = "MapsActivity";
 
@@ -76,6 +78,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static String ORIGIN_URL_3 = "origin=";
     private static String DESTINATION_URL_3 = "&destination=";
 
+    // API: Thong bao tac duong
+    //http://tutran.net/v1/traffic/postStatus/open/location=21.036276,105.761516
+    private static String PRE_URL_4 = "http://tutran.net/v1/traffic/postStatus/";
+    private static String LOCATION_URL = "location=";
 
     private ArrayList<LatLng> listLatLng = new ArrayList<>();
 
@@ -352,7 +358,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Toast.makeText(this, "Size = " + listLatLng.size(), Toast.LENGTH_SHORT).show();
         if (listLatLng.size()<=0) return;
 
-        for (LatLng i: listLatLng){
+        for (LatLng i: listLatLng) {
             polylineOptions.add(i);
         }
         mMap.addPolyline(polylineOptions);
@@ -426,44 +432,50 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     return;
                 }
 
-                // New Polyline
-                polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
+                if (json.getString("type").equalsIgnoreCase("coordinates")){
+                    // New Polyline
+                    polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
 
-                JSONObject origin = json.getJSONObject("origin");
-                JSONObject destination = json.getJSONObject("destination");
-                Toast.makeText(MapsActivity.this,
-                        origin.getString("text") +
-                        " ----->> " +
-                        destination.getString("text")
-                        , Toast.LENGTH_LONG
-                ).show();
-
-                JSONObject info = json.getJSONObject("info");
-                Toast.makeText(MapsActivity.this,
-                        "info:\nsummary = " + info.getString("summary") +
-                        "\n distance = " + info.getString("distance") +
-                        "\n duration = " + info.getString("duration")
-                        , Toast.LENGTH_LONG
-                ).show();
-
-                drawMarkerOriginAndDestination(json);
-
-                JSONArray steps = json.getJSONArray("steps");
-                for (int i=0; i<steps.length(); i++){
-                    JSONObject step = steps.getJSONObject(i);
-                    JSONObject instructions = step.getJSONObject("instructions");
+                    JSONObject origin = json.getJSONObject("origin");
+                    JSONObject destination = json.getJSONObject("destination");
                     Toast.makeText(MapsActivity.this,
-                        "Step " + i +
-                            "\nDistance = " + step.getString("distance") +
-                            "\nManeuver = " + step.getString("maneuver") +
-                            "\nText = "     + instructions.getString("text"),
-                        Toast.LENGTH_LONG
+                            origin.getString("text") +
+                                    " ----->> " +
+                                    destination.getString("text")
+                            , Toast.LENGTH_LONG
                     ).show();
 
-                    drawPolyLineDirection(instructions.getString("text"), step.getJSONArray("polyline"));
-                }
+                    JSONObject info = json.getJSONObject("info");
+                    Toast.makeText(MapsActivity.this,
+                            "info:\nsummary = " + info.getString("summary") +
+                                    "\n distance = " + info.getString("distance") +
+                                    "\n duration = " + info.getString("duration")
+                            , Toast.LENGTH_LONG
+                    ).show();
+
+                    drawMarkerOriginAndDestination(json);
+
+                    JSONArray steps = json.getJSONArray("steps");
+                    for (int i=0; i<steps.length(); i++){
+                        JSONObject step = steps.getJSONObject(i);
+                        JSONObject instructions = step.getJSONObject("instructions");
+                        Toast.makeText(MapsActivity.this,
+                                "Step " + i +
+                                        "\nDistance = " + step.getString("distance") +
+                                        "\nManeuver = " + step.getString("maneuver") +
+                                        "\nText = "     + instructions.getString("text"),
+                                Toast.LENGTH_LONG
+                        ).show();
+
+                        drawPolyLineDirection(instructions.getString("text"), step.getJSONArray("polyline"));
+                    }
 //                polylineFinal =
-                        mMap.addPolyline(polylineOptions);
+                    mMap.addPolyline(polylineOptions);
+                }
+
+                if (json.getString("type").equalsIgnoreCase("post_traffic")){
+                    Toast.makeText(MapsActivity.this, "Da thong bao trang thai thanh cong", Toast.LENGTH_SHORT).show();
+                }
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -618,6 +630,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
         return null;
     }
+
     private String TAG_FIND_ROAD = "abcdxyz";
     public void getAnswer(String question) {
         String s = getBotChatApi(question);
@@ -639,9 +652,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                                 final String botAnswer = response.getString("response");
                                 Log.i(TAG, "bot Answer = " + botAnswer);
+
                                 if(botAnswer.contains(TAG_FIND_ROAD)){
                                     findRoadBotChat(botAnswer);
-                                }else{      //
+                                } else if (botAnswer.contains(TAG_NOTIFICATION_CONGESTION)){
+                                    notificationRoadStatus(TAG_NOTIFICATION_CONGESTION);
+                                } else if (botAnswer.contains(TAG_NOTIFICATION_OPEN)){
+                                    notificationRoadStatus(TAG_NOTIFICATION_OPEN);
+                                }else{
                                     Log.i(TAG, "Khong tim thay dia diem!");
                                     speakText(botAnswer);
                                 }
@@ -782,6 +800,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
             stateMediaPlayer = stateMP_Error;
         }
+    }
+
+    private void notificationRoadStatus(String status){
+        Location mLocation = mMap.getMyLocation();
+
+        String url = PRE_URL_4 + status + "/" + LOCATION_URL + mLocation.getLatitude() + "," + mLocation.getLongitude();
+        new getData().execute(url);
     }
 
 }
