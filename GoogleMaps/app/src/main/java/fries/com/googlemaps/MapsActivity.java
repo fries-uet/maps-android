@@ -59,24 +59,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final int REQUEST_PLACE_PICKER = 1111;
 
-    private static String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";    // Encode URL
+    private static final String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";    // Encode URL
 
     // API: TEXT - TEXT
-    private static String PRE_URL_1 = "http://tutran.net/v1/direction/byText/";
-    private static String ORIGIN_URL_1 = "origin=";
-    private static String DESTINATION_URL_1 = "&destination=";
+    private static final String PRE_URL_1 = "http://tutran.net/v1/direction/byText/";
+    private static final String ORIGIN_URL_1 = "origin=";
+    private static final String DESTINATION_URL_1 = "&destination=";
 
     // API: LATLNG - LATLNG
     // http://tutran.net/v1/direction/byCoordinates/origin=21.033205,105.745402&destination=21.033205,105.758126
-    private static String PRE_URL = "http://tutran.net/v1/direction/byCoordinates/";
-    private static String ORIGIN_URL = "origin=";
-    private static String DESTINATION_URL = "&destination=";
+    private static final String PRE_URL = "http://tutran.net/v1/direction/byCoordinates/";
+    private static final String ORIGIN_URL = "origin=";
+    private static final String DESTINATION_URL = "&destination=";
 
     // API: LATLNG - TEXT
     // http://tutran.net/v1/direction/byMixed/origin=21.033196,105.745296&destination=Quan%20Hoa,%20C%E1%BA%A7u%20Gi%E1%BA%A5y
-    private static String PRE_URL_3 = "http://tutran.net/v1/direction/byMixed/";
-    private static String ORIGIN_URL_3 = "origin=";
-    private static String DESTINATION_URL_3 = "&destination=";
+    private static final String PRE_URL_3 = "http://tutran.net/v1/direction/byMixed/";
+    private static final String ORIGIN_URL_3 = "origin=";
+    private static final String DESTINATION_URL_3 = "&destination=";
 
     // API: Thong bao tac duong
     //http://tutran.net/v1/traffic/postStatus/open/location=21.036276,105.761516
@@ -447,12 +447,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     JSONObject info = json.getJSONObject("info");
                     Toast.makeText(MapsActivity.this,
+                        "Step " + i +
+                            "\nDistance = " + step.getString("distance") +
+                            "\nManeuver = " + step.getString("maneuver") +
+                            "\nText = "     + instructions.getString("text"),
+                        Toast.LENGTH_LONG
+                    );//.show();
                             "info:\nsummary = " + info.getString("summary") +
                                     "\n distance = " + info.getString("distance") +
                                     "\n duration = " + info.getString("duration")
                             , Toast.LENGTH_LONG
                     ).show();
 
+
+                    JSONArray polylines = step.getJSONArray("polyline");
+                    drawPolyLineDirection(polylines);
+                    JSONObject firstPointInStep = polylines.getJSONObject(0);
+                    LatLng finalLatLng = new LatLng(firstPointInStep.getDouble("lat"), firstPointInStep.getDouble("lng"));
+                    stepsDirection.addStepLatLng(new Step(finalLatLng, instructions.getString("text"), step.getString("maneuver")));
+                }
                     drawMarkerOriginAndDestination(json);
 
                     JSONArray steps = json.getJSONArray("steps");
@@ -484,16 +497,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }
 
-        private void drawPolyLineDirection(String text, JSONArray array) throws JSONException{
+        private void drawPolyLineDirection(JSONArray array) throws JSONException{
             if (array.length()<=0) return;
             for (int i=0; i<array.length(); i++){
                 JSONObject point = array.getJSONObject(i);
                 LatLng latLngPoint = new LatLng(point.getDouble("lat"), point.getDouble("lng"));
                 polylineOptions.add(latLngPoint);
             }
-            JSONObject point = array.getJSONObject(array.length()-1);
-            LatLng latLngPoint = new LatLng(point.getDouble("lat"), point.getDouble("lng"));
-            stepsDirection.addStepLatLng(new Step(latLngPoint, text));
         }
 
         private void drawMarkerOriginAndDestination(JSONObject json) throws JSONException{

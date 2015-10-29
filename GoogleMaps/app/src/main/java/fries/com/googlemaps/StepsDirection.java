@@ -13,17 +13,28 @@ public class StepsDirection {
     private Context mContext;
     private ArrayList<Step> listSteps = new ArrayList<>();
 
-    private int currentStep = 0;
-    private int preDistance = 999999;
-    private int stateLocation = STATE_GO_TO_STEP;
 
-    private static int DISTANCE_MIN = 8;
-    private static int STATE_GO_TO_STEP   = 111111;     //
-    private static int STATE_LEFT_STEP    = 222222;     //
+    private int preDistance;
+    private int stateLocation;
+
+    private static final int DISTANCE_MIN = 8;
+    private static final int STATE_GO_TO_STEP   = 111111;     //
+    private static final int STATE_LEFT_STEP    = 222222;     //
+
+    private static boolean isDirecting;
+    private static int currentStep;
 
 
     public StepsDirection(Context context){
         mContext = context;
+        resetDirection();
+    }
+
+    public void resetDirection(){
+        currentStep = -1;
+        preDistance = 999999;
+        stateLocation = STATE_GO_TO_STEP;
+        isDirecting = false;
     }
 
     public StepsDirection(ArrayList<Step> list){
@@ -31,18 +42,25 @@ public class StepsDirection {
     }
 
     public void addStepLatLng(Step step){
-        if (currentStep == 0) {     // If direction is exist, current is started at index = 1
-            currentStep = 1;
-        }
         listSteps.add(step);
+        if (!isDirecting){
+            currentStep = 0;
+            isDirecting = true;
+        }
     }
 
     public boolean checkLocationAndSpeak(LatLng currentLatLng){
         // If direction is empty
-        if (listSteps.size()<=0) return false;
+        if (!isDirecting) return false;
+
+        LatLng currentLatLngStep = listSteps.get(currentStep).getLatLng();
+
+        if (currentStep==0){
+            new ReadText(directStep(currentStep)).run();
+            currentStep ++;
+        }
 
         // Get distance from my location to next step
-        LatLng currentLatLngStep = listSteps.get(currentStep).getLatLng();
         int distance = (int) distance(currentLatLng.latitude, currentLatLng.longitude, currentLatLngStep.latitude, currentLatLngStep.longitude);
 
 //        if (distance<preDistance){
@@ -69,7 +87,7 @@ public class StepsDirection {
     private void preparingGoToNextStep(int distance){
         String value = "Còn " + distance + " mét nữa thì " + listSteps.get(currentStep).getText();
         Toast.makeText(mContext, "Direct: " + value, Toast.LENGTH_SHORT).show();
-        new ReadText(value);
+        new ReadText(value).run();
     }
 
     public double distance(double lat1, double lng1, double lat2, double lng2) {
@@ -85,6 +103,10 @@ public class StepsDirection {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return r * c;
+    }
+
+    private String directStep(int pos){
+        return listSteps.get(pos).getText();
     }
 
 }
