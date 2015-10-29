@@ -12,8 +12,15 @@ import java.util.ArrayList;
 public class StepsDirection {
     private Context mContext;
     private ArrayList<Step> listSteps = new ArrayList<>();
+
     private int currentStep = 0;
+    private int preDistance = 999999;
+    private int stateLocation = STATE_GO_TO_STEP;
+
     private static int DISTANCE_MIN = 8;
+    private static int STATE_GO_TO_STEP   = 111111;     //
+    private static int STATE_LEFT_STEP    = 222222;     //
+
 
     public StepsDirection(Context context){
         mContext = context;
@@ -24,6 +31,9 @@ public class StepsDirection {
     }
 
     public void addStepLatLng(Step step){
+        if (currentStep == 0) {     // If direction is exist, current is started at index = 1
+            currentStep = 1;
+        }
         listSteps.add(step);
     }
 
@@ -34,6 +44,10 @@ public class StepsDirection {
         // Get distance from my location to next step
         LatLng currentLatLngStep = listSteps.get(currentStep).getLatLng();
         int distance = (int) distance(currentLatLng.latitude, currentLatLng.longitude, currentLatLngStep.latitude, currentLatLngStep.longitude);
+
+        if (distance<preDistance){
+
+        }
 
         // Case
         if (distance<=20){          // Next step
@@ -49,7 +63,7 @@ public class StepsDirection {
     private void goToNextStep(){
         String value = "Chuẩn bị " + listSteps.get(currentStep).getText();
         Toast.makeText(mContext, "Direct: " + value, Toast.LENGTH_SHORT).show();
-        currentStep++;
+        if (currentStep+1 < listSteps.size()) currentStep++;
         new ReadText(value).run();
     }
     private void preparingGoToNextStep(int distance){

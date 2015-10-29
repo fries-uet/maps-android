@@ -281,8 +281,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 //            listLatLng.add(latLng);
 //            drawPolyLines();
-
             new getData().execute(getUrlFromOriginAndDestionation());
+            speakText("Đi từ " + originName + " đến, " + destionationName);
         }
 
     }
@@ -545,20 +545,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         switch (requestCode) {
-//            case 1: {                           // Voice
-//                if (resultCode == -1 &&null != data) {
-//                    ArrayList<String> text = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-//                    String r = text.get(0);
-//                    Toast.makeText(MapsActivity.this, "" + text, Toast.LENGTH_SHORT).show();
-//                    // TO DO Sth ...
-//                    new getData().execute(STTUrl(r));
-//                    //---------------------------------------- Reading direction ------------------------------------
-//                    readingDirection();
-//                    //-----------------------------------------------------------------------------------------------
-//                }
-//                break;
-//            }
-
             case KEY_CODE_RECOGNIZER_ACTIVITY: {
                 if (resultCode == -1 && null != data) {
                     ArrayList<String> text = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
@@ -600,40 +586,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 super.onActivityResult(requestCode, resultCode, data);
         }
     }
-
-    private String STTUrl(String text) {
-        // Split string -> Address
-        int pos = text.indexOf("tới");
-        if (pos<=0) return "";
-        String origin = text.substring(0, pos-1);
-        String destionation = text.substring(pos + 4, text.length());
-
-        originName      = origin;
-        destionationName  = destionation;
-
-        Toast.makeText(MapsActivity.this, origin + " --->> " + destionation, Toast.LENGTH_SHORT).show();
-
-        new ReadText("Bạn đang đi từ " + origin + " tới " + destionation).run();//---------------------------------------------------
-
-        // Encode and Get URL
-        String url;
-        url =   PRE_URL_1 +
-                ORIGIN_URL_1 +
-                Uri.encode(origin, ALLOWED_URI_CHARS) +
-                DESTINATION_URL_1 +
-                Uri.encode(destionation, ALLOWED_URI_CHARS);
-
-        Toast.makeText(MapsActivity.this, url, Toast.LENGTH_SHORT).show();
-
-
-        return url;
-    }
-
-    private void readingDirection(){
-
-    }
-
-//    private void
 
 
     //-------------------------------------------------- MInh
