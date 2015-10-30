@@ -2,6 +2,7 @@ package fries.com.googlemaps;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -22,8 +23,9 @@ import android.support.v7.app.AlertDialog;
 import android.text.Html;
 import android.util.Log;
 import android.view.View;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.*;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -54,6 +56,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final String TAG_NOTIFICATION_CONGESTION = "congestion";
     private static final String TAG_NOTIFICATION_OPEN = "open";
+    private static final String TAG_MY_LOCATION = "mylocation";
     private GoogleMap mMap;
     private static String TAG = "MapsActivity";
 
@@ -93,6 +96,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private FloatingActionButton    fabRecordVoice,
                                     fabPickLocation;
+    private LinearLayout    notificationDirection;
+    private TextView        txtOrigin,
+                            txtDestination,
+                            txtDistance,
+                            txtDuration;
+    private ListView    listStep;
+    private ListStepsAdapter listStepsAdapter;
+    private ImageButton btnCancelDirection,
+                        btnAcceptDirection;
+
 
     private StepsDirection stepsDirection = new StepsDirection(MapsActivity.this);
 
@@ -139,9 +152,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onMyLocationChange(Location location) {
                 LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
-//                mMap.animateCamera(cameraUpdate);
-                stepsDirection.checkLocationAndSpeak(currentLatLng);
+                int stateDirection = stepsDirection.checkLocationAndSpeak(currentLatLng);
+                if (stateDirection==StepsDirection.STATE_DIRECTION_IS_SPEAKING){
+                    CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
+                    mMap.animateCamera(cameraUpdate);
+                }
             }
         });
 
@@ -203,6 +218,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         fabRecordVoice      = (FloatingActionButton) findViewById(R.id.fabRecordVoice);
         fabPickLocation     = (FloatingActionButton) findViewById(R.id.fabPickLocation);
 
+        notificationDirection   = (LinearLayout) findViewById(R.id.notificationDirection);
+        txtOrigin       = (TextView) findViewById(R.id.txtOrigin);
+        txtDestination  = (TextView) findViewById(R.id.txtDestination);
+        txtDistance     = (TextView) findViewById(R.id.txtDistance);
+        txtDuration     = (TextView) findViewById(R.id.txtDuration);
+
+        listStepsAdapter = new ListStepsAdapter(this);
+        listStep        = (ListView) findViewById(R.id.listSteps);
+
+        btnCancelDirection  = (ImageButton) findViewById(R.id.btnCancelDirection);
+        btnAcceptDirection  = (ImageButton) findViewById(R.id.btnAcceptDirection);
+
+
         // SetOnClick
         fabRecordVoice.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -223,6 +251,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 onPickButtonClick(v);
             }
         });
+
+        View.OnClickListener onClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switch (v.getId()){
+                    case R.id.btnCancelDirection:
+                        notificationDirection.setVisibility(View.GONE);
+                        Animation myAni1 = AnimationUtils.loadAnimation(MapsActivity.this, R.anim.anim_slide_out_top);
+                        notificationDirection.startAnimation(myAni1);
+                        //resetDirection
+                        resetDirection();
+                        break;
+                    case R.id.btnAcceptDirection:
+                        stepsDirection.startDirecting();    // Bat dau chi duong bang giong noi, voi du lieu da duoc nap san vao stepsDirection
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(getMyLocationLatLng(),16));
+                        break;
+                }
+            }
+        };
+        btnAcceptDirection.setOnClickListener(onClickListener);
+        btnCancelDirection.setOnClickListener(onClickListener);
     }
 
     @Override
@@ -233,7 +282,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public boolean onMyLocationButtonClick() {
         if (checkLocationEnable())
-            getMyAddress();
+        getMyAddress(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude());
         return false;
     }
 
@@ -281,7 +330,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //            listLatLng.add(latLng);
 //            drawPolyLines();
             new getData().execute(getUrlFromOriginAndDestionation());
-            speakText("Đi từ " + originName + " đến, " + destionationName);
+//            speakText("Đi từ " + originName + " đến, " + destionationName);
         }
 
     }
@@ -290,31 +339,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     //----------------------------------- Get -------------------------------------------------------------------------
 
-    private void getMyAddress() {
-        Location mLocation = mMap.getMyLocation();
+//    private void getMyAddress() {
+//        Location mLocation = mMap.getMyLocation();
+//
+//        double lat = mLocation.getLatitude();
+//        double lng = mLocation.getLongitude();
+//
+//        StringBuilder result = new StringBuilder();
+//        try {
+//            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+//            List<Address> addresses = geocoder.getFromLocation(lat, lng, 10);
+//            if (addresses.size() > 0) {
+//                Address address = addresses.get(0);
+//                Log.i(TAG, addresses.size() + "");
+////                Toast.makeText(this, addresses.size() + "", Toast.LENGTH_LONG).show();
+//                int size = address.getMaxAddressLineIndex();
+//                for (int i = 0; i < size; i++) {
+//                    result.append(address.getAddressLine(i)).append("\n");
+//                }
+//                Log.i(TAG, "LATITUDE: " + lat);
+//                Log.i(TAG, "LONGITUDE: " + lng);
+//            }
+//        } catch (IOException e) {
+//            Log.e(TAG, e.getMessage());
+//        }
+//        Toast.makeText(MapsActivity.this, "" + result, Toast.LENGTH_SHORT).show();
+//    }
 
-        double lat = mLocation.getLatitude();
-        double lng = mLocation.getLongitude();
-
-        StringBuilder result = new StringBuilder();
-        try {
-            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            List<Address> addresses = geocoder.getFromLocation(lat, lng, 10);
-            if (addresses.size() > 0) {
-                Address address = addresses.get(0);
-                Log.i(TAG, addresses.size() + "");
-//                Toast.makeText(this, addresses.size() + "", Toast.LENGTH_LONG).show();
-                int size = address.getMaxAddressLineIndex();
-                for (int i = 0; i < size; i++) {
-                    result.append(address.getAddressLine(i)).append("\n");
-                }
-                Log.i(TAG, "LATITUDE: " + lat);
-                Log.i(TAG, "LONGITUDE: " + lng);
-            }
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
-        }
-        Toast.makeText(MapsActivity.this, "" + result, Toast.LENGTH_SHORT).show();
+    private LatLng getMyLocationLatLng(){
+        checkLocationEnable();
+        Location location = mMap.getMyLocation();
+        return new LatLng(location.getLatitude(), location.getLongitude());
     }
 
     private StringBuilder getMyAddress(double lat, double lng) {
@@ -350,7 +405,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 DESTINATION_URL +
                 destionationLatLng.latitude + "," + destionationLatLng.longitude;
 
-        Toast.makeText(this, "url = " + url, Toast.LENGTH_SHORT).show();
         return url;
     }
 
@@ -363,14 +417,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
         mMap.addPolyline(polylineOptions);
     }
-
-    private void deleteMarkerAndPolyline(){
-        mMap.clear();
-        polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
-    }
-
-
-
 
     //------------------------------------- AsynTask ------------------------------------------------------------------------
 
@@ -435,28 +481,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (json.getString("type").equalsIgnoreCase("coordinates") ||
                         json.getString("type").equalsIgnoreCase("text") ||
                         json.getString("type").equalsIgnoreCase("coor_text")){
-                    // New Polyline
-                    polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
-                    stepsDirection = new StepsDirection(MapsActivity.this);
 
+                    // Khoi tao gia tri moi cho Direction
+                    resetDirection();
+
+                    // Lay diem dau va cuoi
                     JSONObject origin = json.getJSONObject("origin");
                     JSONObject destination = json.getJSONObject("destination");
                     Toast.makeText(MapsActivity.this,
-                            origin.getString("text") +
+                            origin.getString("long_name") +
                                     " ----->> " +
-                                    destination.getString("text")
-                            , Toast.LENGTH_LONG
-                    ).show();
+                                    destination.getString("long_name")
+                            , Toast.LENGTH_LONG).show();
 
+                    // Lay thong tin cua Direction
                     JSONObject info = json.getJSONObject("info");
-
                     Toast.makeText(MapsActivity.this,
                             "info:\nsummary = " + info.getString("summary") +
                                     "\n distance = " + info.getString("distance") +
                                     "\n duration = " + info.getString("duration")
                             , Toast.LENGTH_LONG
-                    ).show();
+                    );//.show();
 
+                    // Dua cac thong so cua Direction vao StepsDirection
+                    stepsDirection.setInfomationOfDirection(origin.getString("short_name"),
+                            destination.getString("short_name"),
+                            info.getString("distance"),
+                            info.getString("duration"));
+
+                    String infomationDirection =    "Bạn sẽ đi từ " + origin.getString("short_name") +
+                                                    " đến " + destination.getString("short_name") +
+                                                    ", qua " + info.getString("summary") +
+                                                    ", dài " + info.getString("distance") +
+                                                    ", mất " + info.getString("duration");
+                    Toast.makeText(MapsActivity.this, infomationDirection, Toast.LENGTH_SHORT).show();
+                    speakText(infomationDirection);
+                    Log.i(TAG, infomationDirection);
+
+
+                    // Lay thong tin tung Step
                     JSONArray steps = json.getJSONArray("steps");
                     for (int i=0; i<steps.length(); i++) {
                         JSONObject step = steps.getJSONObject(i);
@@ -473,13 +536,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         drawPolyLineDirection(polylines);
                         JSONObject firstPointInStep = polylines.getJSONObject(0);
                         LatLng finalLatLng = new LatLng(firstPointInStep.getDouble("lat"), firstPointInStep.getDouble("lng"));
-                        stepsDirection.addStepLatLng(new Step(finalLatLng, instructions.getString("text"), step.getString("maneuver")));
+                        stepsDirection.addStepLatLng(
+                                new Step(finalLatLng,
+                                    instructions.getString("text"),
+                                    step.getString("maneuver"),
+                                    step.getString("distance"),
+                                    step.getString("duration"))
+                        );
                     }
 
+                    // Draw in Map
                     drawMarkerOriginAndDestination(json);
-
-//                polylineFinal =
                     mMap.addPolyline(polylineOptions);
+
+                    // Show notificationDirection
+                    showNotificationDirection();
                 }
 
                 if (json.getString("type").equalsIgnoreCase("post_traffic")){
@@ -494,44 +565,75 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
         }
-}
-        private void drawPolyLineDirection(JSONArray array) throws JSONException{
-            if (array.length()<=0) return;
-            for (int i=0; i<array.length(); i++){
-                JSONObject point = array.getJSONObject(i);
-                LatLng latLngPoint = new LatLng(point.getDouble("lat"), point.getDouble("lng"));
-                polylineOptions.add(latLngPoint);
-            }
+    }
+    private void drawPolyLineDirection(JSONArray array) throws JSONException{
+        if (array.length()<=0) return;
+        for (int i=0; i<array.length(); i++){
+            JSONObject point = array.getJSONObject(i);
+            LatLng latLngPoint = new LatLng(point.getDouble("lat"), point.getDouble("lng"));
+            polylineOptions.add(latLngPoint);
         }
+    }
 
-        private void drawMarkerOriginAndDestination(JSONObject json) throws JSONException{
-            String typeOfSourceData = json.getString("type");
-            if (typeOfSourceData.equals("coordinates")){
+    private void drawMarkerOriginAndDestination(JSONObject json) throws JSONException{
+        String typeOfSourceData = json.getString("type");
+        if (typeOfSourceData.equals("coordinates")){
 //                return;
-            }
-
-            // Clear marker
-            mMap.clear();
-            // Origin
-            JSONObject origin = json.getJSONObject("origin");
-            JSONObject geo = origin.getJSONObject("geo");
-            String name = origin.getString("text");
-            LatLng latLng = new LatLng(geo.getDouble("lat"), geo.getDouble("lng"));
-            mMap.addMarker(new MarkerOptions()
-                    .position(latLng)
-                    .title(name)
-                    .flat(true));
-
-            // Destination
-            origin = json.getJSONObject("destination");
-            geo = origin.getJSONObject("geo");
-            name = origin.getString("text");
-            latLng = new LatLng(geo.getDouble("lat"), geo.getDouble("lng"));
-            mMap.addMarker(new MarkerOptions()
-                    .position(latLng)
-                    .title(name)
-                    .flat(true));
         }
+
+        // Clear marker
+        mMap.clear();
+        // Origin
+        JSONObject origin = json.getJSONObject("origin");
+        JSONObject geo = origin.getJSONObject("geo");
+        String name = origin.getString("long_name");
+        LatLng latLng = new LatLng(geo.getDouble("lat"), geo.getDouble("lng"));
+        mMap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title(name)
+                .flat(true));
+
+        // Destination
+        origin = json.getJSONObject("destination");
+        geo = origin.getJSONObject("geo");
+        name = origin.getString("long_name");
+        latLng = new LatLng(geo.getDouble("lat"), geo.getDouble("lng"));
+        mMap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title(name)
+                .flat(true));
+    }
+
+    private void showNotificationDirection(){
+        // Set Layout
+        notificationDirection.setVisibility(View.VISIBLE);
+        Animation myAni2 = AnimationUtils.loadAnimation(MapsActivity.this, R.anim.anim_slide_in_top);
+        notificationDirection.startAnimation(myAni2);
+
+        notificationDirection.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mMap.setPadding(0,notificationDirection.getHeight(),0,0);
+                Log.i(TAG, "Set padding for Map: top = " + notificationDirection.getHeight());
+            }
+        }, 2000);
+
+        // Set Component
+        txtOrigin.setText(stepsDirection.getOrigin());
+        txtDestination.setText(stepsDirection.getDestination());
+        txtDistance.setText(stepsDirection.getDistance());
+        txtDuration.setText(stepsDirection.getDuration());
+
+        listStepsAdapter.setListSteps(stepsDirection.getListSteps());
+        listStep.setAdapter(listStepsAdapter);
+    }
+
+    private void resetDirection(){
+        mMap.clear();
+        mMap.setPadding(0, 0, 0, 0);
+        stepsDirection.resetDirection();
+        polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
+    }
 
 
     //------------------------------------------------------------------------------------------
@@ -610,7 +712,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public MediaPlayer mediaPlayer;
 
     private String mToken = "775ced42-8100-48ef-add1-a7cc6be261ab";
-    private String mBotId = "5632583be4b07d327ad8673f";
+    private String mBotId = "56330793e4b07d327ad86d60";
     private String mHostAIML = "http://118.69.135.27";
     private String mHostTTS = "http://118.69.135.22";
 
@@ -666,6 +768,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     notificationRoadStatus("open");
                                 } else if (botAnswer.contains(TAG_NOTIFICATION_CONGESTION)){
                                     notificationRoadStatus("congestion");
+                                }else if (botAnswer.contains(TAG_MY_LOCATION)){
+                                    Location location = mMap.getMyLocation();
+                                    speakText("Hiện tại, bạn đang ở " + getMyAddress(location.getLatitude(), location.getLongitude()));
                                 }else{
                                     Log.i(TAG, "Khong tim thay dia diem!");
                                     speakText(botAnswer);
@@ -718,7 +823,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     DESTINATION_URL_1 +
                     Uri.encode(end, ALLOWED_URI_CHARS);
         }
-        speakText("Đi từ " + start + " đến " + end);
+//        speakText("Đi từ " + start + " đến " + end);
         Log.i(TAG, "Direction: " + start + " - " + end);
         Log.i(TAG, "url = " + url);
         new getData().execute(url);

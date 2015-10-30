@@ -13,7 +13,8 @@ import java.util.ArrayList;
 public class StepsDirection {
     private static final String TAG = "StepsDirection";
     private Context mContext;
-    private ArrayList<Step> listSteps = new ArrayList<>();
+    private ArrayList<Step> listSteps;
+    private String origin, destination, distance, duration;
 
 
     private int preDistance;
@@ -23,6 +24,10 @@ public class StepsDirection {
     private static final int DISTACE_SPEAK_AGAIN    = 200;  // 200 meter
     private static final int STATE_GO_TO_STEP       = 111111;     //
     private static final int STATE_LEFT_STEP        = 222222;     //
+
+    public static final int STATE_DIRECTION_IS_SPEAKING = 0;
+    public static final int STATE_DIRECTION_IS_NOT_SPEAK = 1;
+    public static final int STATE_DIRECTION_IS_FINISHED = 2;
 
     private static boolean isDirecting;
     private static int currentStep;
@@ -40,6 +45,8 @@ public class StepsDirection {
         stateLocation = STATE_GO_TO_STEP;
         isDirecting = false;
         preIndex = 999999;
+        setInfomationOfDirection("null","null","null","null");
+        listSteps = new ArrayList<>();
     }
 
     public StepsDirection(ArrayList<Step> list){
@@ -51,13 +58,13 @@ public class StepsDirection {
         Log.i(TAG, "Step: " + listSteps.size() + ": " + directStep(listSteps.size() - 1));
         if (!isDirecting){
             currentStep = 0;
-            isDirecting = true;
+//            isDirecting = true;
         }
     }
 
-    public void checkLocationAndSpeak(LatLng currentLatLng){
+    public int checkLocationAndSpeak(LatLng currentLatLng){
         // If direction is empty
-        if (!isDirecting) return;
+        if (!isDirecting) return STATE_DIRECTION_IS_NOT_SPEAK;
 
         LatLng currentLatLngStep = listSteps.get(currentStep).getLatLng();
         String text = "";
@@ -85,6 +92,8 @@ public class StepsDirection {
             new ReadText(text).run();
             Log.i(TAG, text);
         }
+        if (currentStep>=listSteps.size()) return STATE_DIRECTION_IS_FINISHED;
+        return STATE_DIRECTION_IS_SPEAKING;
     }
 
     private String goToNextStep(){
@@ -140,4 +149,39 @@ public class StepsDirection {
         else return "";
     }
 
+    //---------------------------------- Get ---------------------------------------------
+    public ArrayList<Step> getListSteps(){
+        return listSteps;
+    }
+
+    public String getOrigin(){
+        return origin;
+    }
+    public String getDestination(){
+        return destination;
+    }
+    public String getDistance(){
+        return distance;
+    }
+    public String getDuration(){
+        return duration;
+    }
+    public boolean getIsDirecting(){
+        return isDirecting;
+    }
+
+    //------------------------------------ Set ------------------------------------------
+    public void setInfomationOfDirection(String origin, String destination, String distance, String duration){
+        this.origin = origin;
+        this.destination = destination;
+        this.distance = distance;
+        this.duration = duration;
+    }
+
+    private void setIsDirecting(boolean isStart){
+        isDirecting = isStart;
+    }
+    public void startDirecting(){
+        setIsDirecting(true);
+    }
 }

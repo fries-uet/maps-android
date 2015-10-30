@@ -9,13 +9,17 @@ public class Step {
     private LatLng latLng;
     private String text;
     private String maneuver;
+    private String distance;   //
+    private String duration;
 
 //    public Step(){}
 
-    public Step(LatLng latLng, String text, String maneuver){
+    public Step(LatLng latLng, String text, String maneuver, String distance, String duration){
         this.latLng = latLng;
         this.text = text;
         this.maneuver = maneuver;
+        this.distance = distance;
+        this.duration = duration;
     }
 
     public void speak(){
@@ -32,5 +36,13 @@ public class Step {
 
     public String getManeuver(){
         return maneuver;
+    }
+
+    public String getDistance(){
+        return distance;
+    }
+
+    public String getDuration(){
+        return duration;
     }
 }

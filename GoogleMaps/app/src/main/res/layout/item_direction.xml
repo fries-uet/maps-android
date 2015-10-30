@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+
+    <ImageView
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:id="@+id/imgDirection"
+            android:src="@android:drawable/ic_menu_directions"
+            android:background="@android:color/white"
+            android:layout_margin="10dp"/>
+
+    <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/txtDirectionStep"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="Rẽ phải tại Nguyễn Khánh Toàn"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            />
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+            <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:id="@+id/txtDistanceStep"
+                    android:hint="700 m"/>
+
+            <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:id="@+id/txtDurationStep"
+                    android:hint="23 phút"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>
