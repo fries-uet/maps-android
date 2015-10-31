@@ -10,6 +10,8 @@
 
     <include layout="@layout/notification_direction"/>
 
+
+
     <android.support.design.widget.FloatingActionButton
             android:layout_width="60dp"
             android:layout_height="60dp"

@@ -40,22 +40,24 @@ public class StepsDirection {
     }
 
     public void resetDirection(){
-        currentStep = -1;
-        preDistance = 999999;
-        stateLocation = STATE_GO_TO_STEP;
-        isDirecting = false;
-        preIndex = 999999;
-        setInfomationOfDirection("null","null","null","null");
-        listSteps = new ArrayList<>();
-    }
+        currentStep     = 0;
 
-    public StepsDirection(ArrayList<Step> list){
-        this.listSteps = list;
+        stateLocation   = STATE_GO_TO_STEP;
+        isDirecting     = false;
+        preIndex        = 999999;
+        setInfomationOfDirection("null","null","null","null", null);
+        listSteps       = new ArrayList<>();
+
+        //----------------------- test --------------------------------
+        originIsSpeak = false;
+        allowGoToNextStep = true;
+        preDistance     = 999999;
+        preDistanceState    = DISTANCE_DECREASE;
     }
 
     public void addStepLatLng(Step step){
         listSteps.add(step);
-        Log.i(TAG, "Step: " + listSteps.size() + ": " + directStep(listSteps.size() - 1));
+        Logger.i(mContext, TAG, "Step: " + listSteps.size() + ": " + directStep(listSteps.size() - 1));
         if (!isDirecting){
             currentStep = 0;
 //            isDirecting = true;
@@ -69,20 +71,27 @@ public class StepsDirection {
         LatLng currentLatLngStep = listSteps.get(currentStep).getLatLng();
         String text = "";
 
+
+
         // Bat dau chi duong
-        if (currentStep==0){
-            Log.i(TAG, directStep(currentStep));
+        if (currentStep==0 && !originIsSpeak){
+//            Logger.i(TAG, mContext, directStep(currentStep-1));
 //            new ReadText(directStep(currentStep)).run();
-            text += directStep(currentStep) + ". ";
+            text += directStep(currentStep-1) + ". ";
+//            currentStep ++;
             currentStep ++;
+            originIsSpeak = true;
         }
 
         // Get distance from my location to next step
         int distance = (int) distance(currentLatLng.latitude, currentLatLng.longitude, currentLatLngStep.latitude, currentLatLngStep.longitude);
+        Logger.i(mContext, TAG, "Distance = " + distance + ", index = " + currentStep);
+
+//        managerJumpStep(distance);
 
         // Case
-        if (distance<=50){          // Next step
-            text += goToNextStep();
+        if (distance<=100){          // Next step
+            text += readyGoToNextStep();
         } else {                    // Prepare go to next Step
             text += preparingGoToNextStep(distance);
         }
@@ -90,17 +99,22 @@ public class StepsDirection {
         if (!text.equals("")){
             Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
             new ReadText(text).run();
-            Log.i(TAG, text);
+            Logger.i(mContext, TAG, text);
         }
-        if (currentStep>=listSteps.size()) return STATE_DIRECTION_IS_FINISHED;
+
+        if (distance<70) managerJumpStep(distance);
+
+        if (currentStep>=listSteps.size()) {
+            return STATE_DIRECTION_IS_FINISHED;
+        }
         return STATE_DIRECTION_IS_SPEAKING;
     }
 
-    private String goToNextStep(){
+    private String readyGoToNextStep(){
+        if (!allowGoToNextStep) return "";
+
         String value = "Chuẩn bị " + directStep(currentStep);
-        Toast.makeText(mContext, "Direct: " + value, Toast.LENGTH_SHORT).show();
-        currentStep++;
-        if (currentStep>=listSteps.size()){     // Ket thuc chi duong
+        if (currentStep>=listSteps.size()-1){     // Ket thuc chi duong
             isDirecting = false;
             value += ". Đích đến ở phía trước";
         }
@@ -146,8 +160,13 @@ public class StepsDirection {
 
     private String directStep(int pos){
         if (pos>=0 && pos<listSteps.size()) return listSteps.get(pos).getText();
-        else return "";
+        else {
+            Logger.i(mContext, TAG, "Out of bound: " + pos);
+            return "";
+        }
     }
+
+
 
     //---------------------------------- Get ---------------------------------------------
     public ArrayList<Step> getListSteps(){
@@ -171,11 +190,12 @@ public class StepsDirection {
     }
 
     //------------------------------------ Set ------------------------------------------
-    public void setInfomationOfDirection(String origin, String destination, String distance, String duration){
+    public void setInfomationOfDirection(String origin, String destination, String distance, String duration, LatLng tailDestination){
         this.origin = origin;
         this.destination = destination;
         this.distance = distance;
         this.duration = duration;
+        this.latLngOfTailDestination = tailDestination;
     }
 
     private void setIsDirecting(boolean isStart){
@@ -184,4 +204,32 @@ public class StepsDirection {
     public void startDirecting(){
         setIsDirecting(true);
     }
+
+    // ----------------------- Test ---------------------------------------
+    private static final int DISTANCE_DECREASE  = 111;  // Trang thai: khoang cach giam dan
+    private static final int DISTANCE_ASCEND    = 222;  // Trang thai: khoang cach tang dan
+
+    private boolean allowGoToNextStep;
+    private int preDistanceState;
+    private boolean originIsSpeak;
+
+    private LatLng latLngOfTailDestination;
+
+    private void managerJumpStep(int distance){
+        int currentDistanceState;
+        if (preDistance>distance) currentDistanceState = DISTANCE_DECREASE; // Giam dan
+        else currentDistanceState = DISTANCE_ASCEND;                        // Tang dan
+
+        if (currentDistanceState!=preDistanceState) {                       // Neu thay doi trang thai thi nhay Step moi
+            currentStep ++;
+            allowGoToNextStep = true;
+        }else{                                                              // Neu khong thay doi trang thai thi khong cho nhay Step moi
+            allowGoToNextStep = false;
+        }
+
+        preDistance = distance;
+        preDistanceState = currentDistanceState;
+    }
+
+
 }

@@ -3,6 +3,7 @@ package fries.com.googlemaps;
 import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -57,12 +58,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final String TAG_NOTIFICATION_CONGESTION = "congestion";
     private static final String TAG_NOTIFICATION_OPEN = "open";
     private static final String TAG_MY_LOCATION = "mylocation";
+    private static final String TAG_QUESTION_TRAFFIC = "questiontraffic";
     private GoogleMap mMap;
     private static String TAG = "MapsActivity";
 
     private static final int REQUEST_PLACE_PICKER = 1111;
 
-    private static final String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";    // Encode URL
+    private static final String ALLOWED_URI_CHARS = "@&=*+-_.,:!?()/~'%";    // Encode URL
 
     // API: TEXT - TEXT
     private static final String PRE_URL_1 = "http://tutran.net/v1/direction/byText/";
@@ -83,15 +85,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     // API: Thong bao tac duong
     //http://tutran.net/v1/traffic/postStatus/open/location=21.036276,105.761516
-    private static String PRE_URL_4 = "http://tutran.net/v1/traffic/postStatus/";
-    private static String LOCATION_URL = "location=";
+    private static final String PRE_URL_4 = "http://tutran.net/v1/traffic/postStatus/";
+    private static final String LOCATION_URL = "location=";
+
+    // API: Thong bao trang thai cua tuyen duong: Tac / Da duoc thong
+    //http://tutran.net/v1/traffic/getStatusByName/c%E1%BA%A7u%20v%C4%A9nh%20tuy
+    private static final String PRE_URL_GET_TRAFFIC = "http://tutran.net/v1/traffic/getStatusByName/";
 
     private ArrayList<LatLng> listLatLng = new ArrayList<>();
 
     private PolylineOptions polylineOptions = new PolylineOptions().color(Color.BLACK).geodesic(true);
 
-    private LatLng originLatLng = null, destionationLatLng = null;
-    private String originName = "",     destionationName = "";
+    private LatLng originLatLng = null, destinationLatLng = null;
+    private String originName = "",     destinationName = "";
 
 
     private FloatingActionButton    fabRecordVoice,
@@ -148,6 +154,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mMap.setOnMapClickListener(this);
 
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
@@ -294,7 +301,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         double lng = latLng.longitude;
 
         StringBuilder address = getMyAddress(lat, lng);
-//        Toast.makeText(this, "Location = " + address, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, address, Toast.LENGTH_LONG).show();
+
+        // Neu dang chi duong thi thoat
+        if (stepsDirection.getIsDirecting()) return;
 
         if (originLatLng == null){                                      // First Click
             // Clear MArker and Polyline
@@ -318,19 +328,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             listLatLng.add(latLng);
 
-        }else if (destionationLatLng == null){                          // Second Click
-            destionationLatLng  = latLng;
-            destionationName    = address.toString();
+        }else if (destinationLatLng == null){                          // Second Click
+            destinationLatLng  = latLng;
+            destinationName    = address.toString();
 
             mMap.addMarker(new MarkerOptions()
                     .position(latLng)
-                    .title(destionationName)
+                    .title(destinationName)
                     .flat(true));
 
 //            listLatLng.add(latLng);
 //            drawPolyLines();
-            new getData().execute(getUrlFromOriginAndDestionation());
-//            speakText("Đi từ " + originName + " đến, " + destionationName);
+            new getData().execute(getUrlFromOriginAndDestination());
+//            speakText("Đi từ " + originName + " đến, " + destinationName);
+            originLatLng = null;
+            destinationLatLng = null;
         }
 
     }
@@ -379,16 +391,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             List<Address> addresses = geocoder.getFromLocation(lat, lng, 1);
             if (addresses.size() > 0) {
                 Address address = addresses.get(0);
-                Log.i(TAG, addresses.size() + "");
+                Logger.i(this, TAG, addresses.size() + "");
                 int size = address.getMaxAddressLineIndex();
                 for (int i = 0; i < size; i++) {
                     result.append(address.getAddressLine(i)).append(" ");
                 }
-                Log.i(TAG, "LATITUDE: " + lat);
-                Log.i(TAG, "LONGITUDE: " + lng);
+                Logger.i(this, TAG, "LATITUDE: " + lat);
+                Logger.i(this, TAG, "LONGITUDE: " + lng);
             }
         } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
+            Logger.e(this, TAG, e.getMessage());
         }
         Toast.makeText(MapsActivity.this, "" + result, Toast.LENGTH_SHORT).show();
         return result;
@@ -396,14 +408,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 
-    private String getUrlFromOriginAndDestionation(){
+    private String getUrlFromOriginAndDestination(){
         String url;
 
         url =   PRE_URL +
                 ORIGIN_URL +
                 originLatLng.latitude + "," + originLatLng.longitude +
                 DESTINATION_URL +
-                destionationLatLng.latitude + "," + destionationLatLng.longitude;
+                destinationLatLng.latitude + "," + destinationLatLng.longitude;
 
         return url;
     }
@@ -435,7 +447,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //            Log.i(TAG, u);
 //            Toast.makeText(getBaseContext(), "url = " + args[0], Toast.LENGTH_SHORT).show();
 
-            Log.i(TAG, "args[0] = " + args[0]);
+            Logger.i(MapsActivity.this, TAG, "args[0] = " + args[0]);
 
             StringBuilder result = new StringBuilder();
 
@@ -443,7 +455,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 URL url = new URL(args[0]);
                 urlConnection = (HttpURLConnection) url.openConnection();
 //                Toast.makeText(getBaseContext(), "res = " + urlConnection.getResponseCode(), Toast.LENGTH_SHORT).show();
-                Log.i(TAG, "response= " + urlConnection.getResponseCode());
+                Logger.i(MapsActivity.this, TAG, "response= " + urlConnection.getResponseCode());
                 InputStream in = new BufferedInputStream(urlConnection.getInputStream());
                 BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
@@ -454,7 +466,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             }catch( Exception e) {
                 e.printStackTrace();
-                Log.i(TAG, "No data in doInBackGround from URL");
+                Logger.i(MapsActivity.this, TAG, "No data in doInBackGround from URL");
             }
             finally {
                 urlConnection.disconnect();
@@ -474,10 +486,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 String status = json.getString("status");
                 if (!status.equals("OK")) {
-                    Log.i(TAG,"Direction is NULL");
+                    Logger.i(MapsActivity.this, TAG,"Direction is NULL");
                     return;
                 }
 
+                // Get Direction: Chi duong
                 if (json.getString("type").equalsIgnoreCase("coordinates") ||
                         json.getString("type").equalsIgnoreCase("text") ||
                         json.getString("type").equalsIgnoreCase("coor_text")){
@@ -503,23 +516,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             , Toast.LENGTH_LONG
                     );//.show();
 
-                    // Dua cac thong so cua Direction vao StepsDirection
-                    stepsDirection.setInfomationOfDirection(origin.getString("short_name"),
-                            destination.getString("short_name"),
-                            info.getString("distance"),
-                            info.getString("duration"));
-
                     String infomationDirection =    "Bạn sẽ đi từ " + origin.getString("short_name") +
                                                     " đến " + destination.getString("short_name") +
                                                     ", qua " + info.getString("summary") +
-                                                    ", dài " + info.getString("distance") +
+                                                    ", dài " + info.getString("distance_vn") +
                                                     ", mất " + info.getString("duration");
                     Toast.makeText(MapsActivity.this, infomationDirection, Toast.LENGTH_SHORT).show();
                     speakText(infomationDirection);
-                    Log.i(TAG, infomationDirection);
+                    Logger.i(MapsActivity.this, TAG, infomationDirection);
 
 
                     // Lay thong tin tung Step
+                    LatLng latLngTailOfDestination = null;
                     JSONArray steps = json.getJSONArray("steps");
                     for (int i=0; i<steps.length(); i++) {
                         JSONObject step = steps.getJSONObject(i);
@@ -535,15 +543,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         JSONArray polylines = step.getJSONArray("polyline");
                         drawPolyLineDirection(polylines);
                         JSONObject firstPointInStep = polylines.getJSONObject(0);
-                        LatLng finalLatLng = new LatLng(firstPointInStep.getDouble("lat"), firstPointInStep.getDouble("lng"));
+                        LatLng headLatLng = new LatLng(firstPointInStep.getDouble("lat"), firstPointInStep.getDouble("lng"));
                         stepsDirection.addStepLatLng(
-                                new Step(finalLatLng,
+                                new Step(headLatLng,
                                     instructions.getString("text"),
                                     step.getString("maneuver"),
                                     step.getString("distance"),
                                     step.getString("duration"))
                         );
+                        JSONObject finalPointInStep = polylines.getJSONObject(polylines.length()-1);
+                        latLngTailOfDestination = new LatLng(finalPointInStep.getDouble("lat"), finalPointInStep.getDouble("lng"));
                     }
+
+                    // Dua cac thong so cua Direction vao StepsDirection
+                    stepsDirection.setInfomationOfDirection(origin.getString("short_name"),
+                            destination.getString("short_name"),
+                            info.getString("distance"),
+                            info.getString("duration"),
+                            latLngTailOfDestination);
 
                     // Draw in Map
                     drawMarkerOriginAndDestination(json);
@@ -551,17 +568,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     // Show notificationDirection
                     showNotificationDirection();
+                    return;
                 }
 
+                // Get response after post traffic: Thong bao sau khi gui thong bao tac duong len server
                 if (json.getString("type").equalsIgnoreCase("post_traffic")){
                     Toast.makeText(MapsActivity.this, "Da thong bao trang thai thanh cong", Toast.LENGTH_SHORT).show();
-                    Log.i(TAG, "Da thong bao trang thai thanh cong");
+                    Logger.i(MapsActivity.this, TAG, "Da thong bao trang thai thanh cong");
                     speakText("Cám ơn bạn đã phản hồi");
+                    return;
+                }
+
+                // Get response status: Thong bao trang thai cua tuyen duong
+                if (json.getString("type").equalsIgnoreCase("get_traffic")){
+                    int resultTraffic = json.getInt("result");
+                    if (resultTraffic==0){
+                        Toast.makeText(MapsActivity.this, "Không có thông tin về tuyến đường này, mong bạn thông cảm", Toast.LENGTH_SHORT).show();
+                        Logger.i(MapsActivity.this, TAG, "Không có thông tin về tuyến đường này, mong bạn thông cảm");
+                        speakText("Không có thông tin về tuyến đường này, mong bạn thông cảm");
+                        return;
+                    }
+
+                    JSONObject data = json.getJSONObject("data");
+                    String nameRoad = data.getString("name");
+                    String text = "Hiện tại, " + nameRoad + " đang ";
+                    if (data.getString("type").equals(TAG_NOTIFICATION_CONGESTION)){
+                        text += "tắc đường";
+                    }else{
+                        text += "lưu thông bình thường";
+                    }
+                    text += (", theo thông tin cách đây " + data.getString("ago_text") + " trước.");
+                    Toast.makeText(MapsActivity.this, text, Toast.LENGTH_SHORT).show();
+                    Logger.i(MapsActivity.this, TAG, text);
+                    speakText(text);
+                    return;
                 }
 
             } catch (JSONException e) {
                 e.printStackTrace();
-                Log.i(TAG, "Cannot convert Result to Json");
+                Logger.i(MapsActivity.this, TAG, "Cannot convert Result to Json");
             }
 
         }
@@ -614,7 +659,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void run() {
                 mMap.setPadding(0,notificationDirection.getHeight(),0,0);
-                Log.i(TAG, "Set padding for Map: top = " + notificationDirection.getHeight());
+                Logger.i(MapsActivity.this, TAG, "Set padding for Map: top = " + notificationDirection.getHeight());
             }
         }, 2000);
 
@@ -647,9 +692,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // identified by a request code.
             startActivityForResult(intent, REQUEST_PLACE_PICKER);
 
-        } catch (GooglePlayServicesRepairableException e) {
-            // ...
-        } catch (GooglePlayServicesNotAvailableException e) {
+        } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
             // ...
         }
     }
@@ -712,7 +755,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public MediaPlayer mediaPlayer;
 
     private String mToken = "775ced42-8100-48ef-add1-a7cc6be261ab";
-    private String mBotId = "56330793e4b07d327ad86d60";
+    private String mBotId = "=";
     private String mHostAIML = "http://118.69.135.27";
     private String mHostTTS = "http://118.69.135.22";
 
@@ -744,7 +787,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void getAnswer(String question) {
         String s = getBotChatApi(question);
         if (s == null) return;
-//        Log.i(TAG, s);
         JsonObjectRequest jsonObjRequest = new JsonObjectRequest(Request.Method.GET,
                 s, null,
                 new Response.Listener<JSONObject>() {
@@ -752,7 +794,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     public void onResponse(JSONObject response) {
                         Toast.makeText(MapsActivity.this, response.toString(),
                                     Toast.LENGTH_LONG).show();
-                            Log.i(TAG, "Response JSON = " + response.toString());
+                            Logger.i(MapsActivity.this, TAG, "Response JSON = " + response.toString());
 //                        int start = response.toString().indexOf("response") + 11;
 //                        int end = response.toString().indexOf("botname") - 3;
 //                        final String botAnswer = response.toString().substring(start,end);
@@ -760,7 +802,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 // lay dia diem (text: day, dia diem)
 
                                 final String botAnswer = response.getString("response");
-                                Log.i(TAG, "bot Answer = " + botAnswer);
+                                Logger.i(MapsActivity.this, TAG, "bot Answer = " + botAnswer);
 
                                 if(botAnswer.contains(TAG_FIND_ROAD)){
                                     findRoadBotChat(botAnswer);
@@ -771,8 +813,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 }else if (botAnswer.contains(TAG_MY_LOCATION)){
                                     Location location = mMap.getMyLocation();
                                     speakText("Hiện tại, bạn đang ở " + getMyAddress(location.getLatitude(), location.getLongitude()));
+                                }else if (botAnswer.contains(TAG_QUESTION_TRAFFIC)){
+                                    getRoadStatus(botAnswer);
                                 }else{
-                                    Log.i(TAG, "Khong tim thay dia diem!");
+                                    Logger.i(MapsActivity.this, TAG, "Khong tim thay dia diem!");
                                     speakText(botAnswer);
                                 }
                                 // Noi TTS
@@ -785,7 +829,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.e(TAG, error.getMessage() + "");
+                Logger.e(MapsActivity.this, TAG, error.getMessage() + "");
             }
         }) {
             @Override
@@ -798,7 +842,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (SmacApplication.getInstance() != null) {
             SmacApplication.getInstance().addToRequestQueue(jsonObjRequest, "jsonobject_request");
         } else {
-            Log.i(TAG, "SmacApplication is null");
+            Logger.i(MapsActivity.this, TAG, "SmacApplication is null");
         }
     }
 
@@ -824,8 +868,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Uri.encode(end, ALLOWED_URI_CHARS);
         }
 //        speakText("Đi từ " + start + " đến " + end);
-        Log.i(TAG, "Direction: " + start + " - " + end);
-        Log.i(TAG, "url = " + url);
+        Logger.i(this, TAG, "Direction: " + start + " - " + end);
+        Logger.i(this, TAG, "url = " + url);
         new getData().execute(url);
         //------------------------------------------------------- Test Dialog-------------------------------------------------------
         AlertDialog.Builder alerDialog = new AlertDialog.Builder(this);
@@ -851,7 +895,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @SuppressWarnings("deprecation")
     public void speakTTS(String msg) {
         String URL = mHostTTS + "/synthesis/file?voiceType=\"female\"&text=\"" + URLEncoder.encode(msg) + "\"";
-        Log.i(TAG, "Da nhan text");
+        Logger.i(this, TAG, "Da nhan text");
         downloadFile(URL, "sdcard/sound.wav");
     }
 
@@ -868,7 +912,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void downloadFile(final String sURL, final String filePath) {
         try {
             URL url = new URL(sURL);
-            Log.e(TAG, "Download URL: " + url.toString());
+            Logger.e(this, TAG, "Download URL: " + url.toString());
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("GET");
             urlConnection.setRequestProperty("accept-charset", "UTF-8");
@@ -884,7 +928,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             while ((bufferLength = inputStream.read(buffer)) > 0) {
                 fileOutput.write(buffer, 0, bufferLength);
             }
-            Log.i(TAG, "Ghi file vao bo nho thanh cong");
+            Logger.i(this, TAG, "Ghi file vao bo nho thanh cong");
             speakVi(file.getAbsolutePath());
             fileOutput.close();
         } catch (MalformedURLException e) {
@@ -917,7 +961,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Location mLocation = mMap.getMyLocation();
 
         String url = PRE_URL_4 + status + "/" + LOCATION_URL + mLocation.getLatitude() + "," + mLocation.getLongitude();
-        Log.i(TAG, "Phan hoi tinh hinh giao thong: " + url);
+        Logger.i(this, TAG, "Phan hoi tinh hinh giao thong: " + url);
+        new getData().execute(url);
+    }
+
+    private void getRoadStatus(String response){
+        String nameRoad = response.substring(TAG_QUESTION_TRAFFIC.length(), response.length());
+        String url = PRE_URL_GET_TRAFFIC + Uri.encode(nameRoad, ALLOWED_URI_CHARS);
+        Logger.i(this, TAG, "Kiem tra tinh hinh giao thong: " + url);
         new getData().execute(url);
     }
 
