@@ -52,7 +52,6 @@ public class Logger {
             logToFile(context, logMessageTag, logMessage + "\r\n" + Log.getStackTraceString(throwableException));
     }
 
-// The i and w method for info and warning logs should be implemented in the same way as the e method for error logs.
 
     /**
      * Sends a message to LogCat and to a log file.
