@@ -242,14 +242,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         fabRecordVoice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "vi-vn");
-                try {
-                    startActivityForResult(intent, KEY_CODE_RECOGNIZER_ACTIVITY);
-                } catch (Exception a) {
-                    Toast.makeText(MapsActivity.this, "Khong ho tro STT", Toast.LENGTH_SHORT).show();
-                    a.printStackTrace();
-                }
+                startRecognizerIntent();
             }
         });
         fabPickLocation.setOnClickListener(new View.OnClickListener() {
@@ -594,7 +587,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     String text = "Hiện tại, " + nameRoad + " đang ";
                     if (data.getString("type").equals(TAG_NOTIFICATION_CONGESTION)){
                         text += "tắc đường";
-                    }else{
+                    }
+                    if (data.getString("type").equals(TAG_NOTIFICATION_OPEN)){
                         text += "lưu thông bình thường";
                     }
                     text += (", theo thông tin cách đây " + data.getString("ago_text") + " trước.");
@@ -754,14 +748,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public int stateMediaPlayer;
     public MediaPlayer mediaPlayer;
 
-    private String mToken = "775ced42-8100-48ef-add1-a7cc6be261ab";
-    private String mBotId = "=";
-    private String mHostAIML = "http://118.69.135.27";
-    private String mHostTTS = "http://118.69.135.22";
+    private static final String mToken = "775ced42-8100-48ef-add1-a7cc6be261ab";
+    private static final String mBotId = "5633a9c7e4b07d327ad8794b";
+    private static final String mHostAIML = "http://118.69.135.27";
+    private static final String mHostTTS = "http://118.69.135.22";
 
     private void startRecognizerIntent() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "vi");
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "vi-vn");
         try {
             startActivityForResult(intent, KEY_CODE_RECOGNIZER_ACTIVITY);
             Toast.makeText(this, "ok", Toast.LENGTH_SHORT).show();
@@ -847,7 +841,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void findRoadBotChat(String botAnswer){
-        // xu li lo cation
+        // xu li location
         // abcxyzDay , Cau Giay
         // abcxyzTu liem , Ha Noi
         String start = botAnswer.substring(TAG_FIND_ROAD.length(), botAnswer.indexOf(",") - 1);
@@ -939,19 +933,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void initMediaPlayer(String path) {
-        String PATH_TO_FILE = path;
         mediaPlayer = new MediaPlayer();
         try {
-            mediaPlayer.setDataSource(PATH_TO_FILE);
+            mediaPlayer.setDataSource(path);
             mediaPlayer.prepare();
             stateMediaPlayer = stateMP_NotStarter;
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-            stateMediaPlayer = stateMP_Error;
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-            stateMediaPlayer = stateMP_Error;
-        } catch (IOException e) {
+        } catch (IllegalArgumentException | IllegalStateException | IOException e) {
             e.printStackTrace();
             stateMediaPlayer = stateMP_Error;
         }
