@@ -14,7 +14,6 @@ public abstract class ResponseService {
     public static final String TAG_ANSWER  = "answer";
 
     // TYPE of Response
-//    public static final String TYPE_BOT_CHAT        = "bot_chat";
     public static final String TYPE_SPEAK           = "speak";
     public static final String TYPE_GET_TRAFFIC     = "get_traffic";
     public static final String TYPE_POST_TRAFFIC    = "post_traffic";

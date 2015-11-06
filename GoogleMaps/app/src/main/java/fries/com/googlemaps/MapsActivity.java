@@ -35,9 +35,10 @@ import java.io.*;
 import java.util.*;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
-        LocationSource.OnLocationChangedListener,
+//        LocationSource.OnLocationChangedListener,
         GoogleMap.OnMyLocationButtonClickListener,
-        GoogleMap.OnMapClickListener{
+        GoogleMap.OnMapClickListener,
+        LocationListener{
 
     private static final String TAG = "MapsActivity";
     private static final int KEY_CODE_RECOGNIZER_ACTIVITY = 1824;
@@ -91,6 +92,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+
+
+
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
@@ -100,8 +105,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
                     mMap.animateCamera(cameraUpdate);
                 }
+                Log.i(TAG, "```````````````````` " + location.getSpeed());
             }
         });
+
 
         setLanguage();
 
@@ -115,6 +122,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
     }
+
+
 
 
     //-------------------------- Setting -------------------------------------------------------------------
@@ -205,7 +214,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onLocationChanged(Location location) {
-//        Toast.makeText(this, "Location Changed: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
+        double lat = location.getLatitude();
+        double lng = location.getLongitude();
+        LatLng currentLatLng = new LatLng(lat, lng);
+        Log.i(TAG, "____________________ " + location.getSpeed());
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
+        mMap.animateCamera(cameraUpdate);
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
     }
 
     @Override

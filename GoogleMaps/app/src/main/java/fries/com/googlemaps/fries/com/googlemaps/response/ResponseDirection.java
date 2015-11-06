@@ -33,8 +33,6 @@ public class ResponseDirection extends ResponseService{
         origin      = getJsonAddress(json, "origin");
         destination = getJsonAddress(json, "destination");
         information = getJsonInformation(json);
-        Log.i(TAG, "origin: " + origin.getFullName() + ": " + origin.getLatLng().latitude + ", " + origin.getLatLng().longitude);
-        Log.i(TAG, "origin: " + destination.getFullName() + ": " + destination.getLatLng().latitude + ", " + destination.getLatLng().longitude);
         Log.i(TAG, "information: " + information);
         getListSteps(json);
     }
