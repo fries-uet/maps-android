@@ -24,18 +24,4 @@
             android:elevation="20dp"
             />
 
-    <android.support.design.widget.FloatingActionButton
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:id="@+id/fabPickLocation"
-            android:layout_gravity="bottom|end"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="100dp"
-            android:clickable="true"
-            android:src="@drawable/ico_pick_location"
-            android:scaleType="fitCenter"
-            android:elevation="20dp"
-            />
-
-
 </FrameLayout>

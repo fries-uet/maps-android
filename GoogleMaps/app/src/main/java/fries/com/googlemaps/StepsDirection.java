@@ -98,7 +98,7 @@ public class StepsDirection {
 
         if (!text.equals("")){
             Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
-            new ReadText(text).run();
+            new ReadTextStream(text).start();
             Logger.i(mContext, TAG, text);
         }
 
@@ -229,6 +229,7 @@ public class StepsDirection {
 
         preDistance = distance;
         preDistanceState = currentDistanceState;
+
     }
 
 

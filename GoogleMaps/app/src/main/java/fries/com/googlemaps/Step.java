@@ -23,7 +23,7 @@ public class Step {
     }
 
     public void speak(){
-        new ReadText(text).run();
+        new ReadTextStream(text).run();
     }
 
     public String getText(){

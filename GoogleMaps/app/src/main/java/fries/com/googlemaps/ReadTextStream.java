@@ -9,11 +9,11 @@ import android.widget.Toast;
 /**
  * Created by tmq on 10/10/15.
  */
-public class ReadText extends Thread{
+public class ReadTextStream extends Thread{
 //    private Context mContext;
     private String url;
 
-    public ReadText(String text){
+    public ReadTextStream(String text){
 //        mContext = c;
         String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";
         String urlEncoded = Uri.encode(text, ALLOWED_URI_CHARS);
