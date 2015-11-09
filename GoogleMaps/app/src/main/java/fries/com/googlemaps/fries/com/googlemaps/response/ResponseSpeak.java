@@ -1,5 +1,6 @@
 package fries.com.googlemaps.fries.com.googlemaps.response;
 
+import android.content.Context;
 import fries.com.googlemaps.ReadTextStream;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -11,8 +12,8 @@ public class ResponseSpeak extends ResponseService{
     private String answer;
     private String myLocation;
 
-    public ResponseSpeak(JSONObject json){
-        super(json);
+    public ResponseSpeak(Context context, JSONObject json){
+        super(context, json);
     }
 
     @Override

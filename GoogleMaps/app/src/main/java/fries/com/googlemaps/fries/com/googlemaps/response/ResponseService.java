@@ -1,5 +1,6 @@
 package fries.com.googlemaps.fries.com.googlemaps.response;
 
+import android.content.Context;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -22,14 +23,16 @@ public abstract class ResponseService {
     public static final String TYPE_DIRECTION_COORDINATE_TO_TEXT    = "coor_text";
     public static final String TYPE_DIRECTION_TEXT_TO_TEXT          = "text_text";
 
+    protected Context mContext;
     protected String type;
 
 //    public ResponseService(){
 //        type = "";
 //    }
 
-    public ResponseService(JSONObject json){
+    public ResponseService(Context context, JSONObject json){
         try {
+            mContext = context;
             this.type = json.getString(TAG_TYPE);
             analyzeJson(json);
         } catch (JSONException e) {

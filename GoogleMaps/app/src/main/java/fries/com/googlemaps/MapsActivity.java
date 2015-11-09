@@ -25,6 +25,7 @@ import com.android.volley.*;
 import com.android.volley.Response;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.*;
 import com.google.android.gms.maps.model.*;
 import fries.com.googlemaps.fries.com.googlemaps.response.*;
@@ -37,8 +38,7 @@ import java.util.*;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
 //        LocationSource.OnLocationChangedListener,
         GoogleMap.OnMyLocationButtonClickListener,
-        GoogleMap.OnMapClickListener,
-        LocationListener{
+        GoogleMap.OnMapClickListener{
 
     private static final String TAG = "MapsActivity";
     private static final int KEY_CODE_RECOGNIZER_ACTIVITY = 1824;
@@ -59,6 +59,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     private StepsDirection stepsDirection = new StepsDirection(MapsActivity.this);
+    private ResponseDirection direction;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,21 +92,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnMapClickListener(this);
         //----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-
-
-
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
-                LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                int stateDirection = stepsDirection.checkLocationAndSpeak(currentLatLng);
-                if (stateDirection==StepsDirection.STATE_DIRECTION_IS_SPEAKING){
-                    CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
-                    mMap.animateCamera(cameraUpdate);
-                }
-                Log.i(TAG, "```````````````````` " + location.getSpeed());
+                if (direction==null || !direction.isDirecting) return;
+
+                direction.checkLocationAndSpeakDirection(location);
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(new LatLng(location.getLatitude(), location.getLongitude()));
+                mMap.animateCamera(cameraUpdate);
+
             }
         });
 
@@ -215,31 +210,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onLocationChanged(Location location) {
-        double lat = location.getLatitude();
-        double lng = location.getLongitude();
-        LatLng currentLatLng = new LatLng(lat, lng);
-        Log.i(TAG, "____________________ " + location.getSpeed());
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
-        mMap.animateCamera(cameraUpdate);
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-
-    @Override
     public boolean onMyLocationButtonClick() {
         if (checkLocationEnable())
         getMyAddress(mMap.getMyLocation().getLatitude(),mMap.getMyLocation().getLongitude());
@@ -256,7 +226,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         StringBuilder address = getMyAddress(lat, lng);
         Toast.makeText(this, address, Toast.LENGTH_LONG).show();
     }
-
 
 
     //----------------------------------- Get -------------------------------------------------------------------------
@@ -286,6 +255,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Logger.e(this, TAG, e.getMessage());
         }
         Toast.makeText(MapsActivity.this, "" + result, Toast.LENGTH_SHORT).show();
+        return result;
+    }
+
+    private String getCurrentCity() {
+        String result = "";
+        Location location = mMap.getMyLocation();
+        double lat = location.getLatitude();
+        double lng = location.getLongitude();
+        try {
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> addresses = geocoder.getFromLocation(lat, lng, 1);
+            if (addresses.size() > 0) {
+                Address address = addresses.get(0);
+                int size = address.getMaxAddressLineIndex();
+                if (size>=1) result = address.getAddressLine(size-1);
+                else result = address.getAddressLine(0);
+                Logger.i(this, TAG, "City: " + result);
+            }
+        } catch (IOException e) {
+            Logger.e(this, TAG, e.getMessage());
+        }
         return result;
     }
 
@@ -364,6 +354,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             jsonObject.put("question", request);
             jsonObject.put("my_latitude", location.getLatitude());
             jsonObject.put("my_longitude", location.getLongitude());
+            jsonObject.put("city", getCurrentCity());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -385,18 +376,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         case ResponseService.TYPE_SPEAK:
                         case ResponseService.TYPE_POST_TRAFFIC:
                         case ResponseService.TYPE_MY_LOCATION:
-                            ResponseSpeak speak = new ResponseSpeak(response);
+                            ResponseSpeak speak = new ResponseSpeak(MapsActivity.this, response);
                             speak.speak();
                             break;
                         case ResponseService.TYPE_GET_TRAFFIC:
-                            ResponseGetTraffic getTraffic = new ResponseGetTraffic(response);
+                            ResponseGetTraffic getTraffic = new ResponseGetTraffic(MapsActivity.this, response);
                             getTraffic.speak();
                             break;
                         case ResponseService.TYPE_DIRECTION:
                         case ResponseService.TYPE_DIRECTION_COORDINATE_TO_TEXT:
                         case ResponseService.TYPE_DIRECTION_TEXT_TO_TEXT:
                             mMap.clear();
-                            ResponseDirection direction = new ResponseDirection(response);
+                            direction = new ResponseDirection(MapsActivity.this, response);
+                            direction.isDirecting = true;
                             direction.speakInformation();
                             mMap.addPolyline(direction.getPolylineOptions());
                             mMap.addMarker(new MarkerOptions()

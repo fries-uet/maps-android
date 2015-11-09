@@ -1,5 +1,6 @@
 package fries.com.googlemaps.fries.com.googlemaps.response;
 
+import android.content.Context;
 import android.util.Log;
 import fries.com.googlemaps.ReadTextStream;
 import org.json.JSONException;
@@ -18,8 +19,8 @@ public class ResponseGetTraffic extends ResponseService{
     private String name;
     private String agoText;
 
-    public ResponseGetTraffic(JSONObject json) {
-        super(json);
+    public ResponseGetTraffic(Context context, JSONObject json) {
+        super(context, json);
 
     }
 
