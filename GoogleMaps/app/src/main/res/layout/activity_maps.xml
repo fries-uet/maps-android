@@ -1,27 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:orientation="vertical"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:layout_weight="1">
 
 
+        <include layout="@layout/maps" />
 
-    <include layout="@layout/maps"/>
-
-    <include layout="@layout/notification_direction"/>
-
+        <include layout="@layout/notification_direction" />
 
 
-    <android.support.design.widget.FloatingActionButton
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/fabRecordVoice"
             android:layout_width="60dp"
             android:layout_height="60dp"
-            android:id="@+id/fabRecordVoice"
             android:layout_gravity="bottom|end"
             android:layout_margin="16dp"
             android:clickable="true"
-            android:src="@drawable/ico_record_voice"
-            android:scaleType="fitCenter"
             android:elevation="20dp"
-            />
+            android:scaleType="fitCenter"
+            android:src="@drawable/ico_record_voice" />
 
-</FrameLayout>
+    </FrameLayout>
+
+    <TableRow
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:gravity="center"
+        android:padding="5dp">
+        <EditText
+            android:id="@+id/edt_voice"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:hint="@string/edt_voice"/>
+
+        <Button
+            android:id="@+id/btn_speak"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:text="@string/btn_speak"/>
+    </TableRow>
+
+</LinearLayout>

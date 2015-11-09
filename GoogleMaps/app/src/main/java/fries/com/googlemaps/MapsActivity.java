@@ -114,6 +114,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         initViews();
 
+        initViewsVoiceText();
+
         // Move to Ha Noi
         CameraPosition cameraPosition = CameraPosition.builder()
                 .target(new LatLng(21.0201531, 105.7988345))
@@ -429,6 +431,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         Log.i(TAG, "Finish");
+    }
+
+
+    // nhap cau noi bang text
+    ///////////////////////////////////////////
+    private EditText edtVoice;
+    private Button btnVoice;
+
+    private void initViewsVoiceText(){
+        edtVoice = (EditText) findViewById(R.id.edt_voice);
+        btnVoice = (Button) findViewById(R.id.btn_speak);
+
+        btnVoice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String text = edtVoice.getText().toString();
+
+                sendRequest(text);
+            }
+        });
     }
 
 }
