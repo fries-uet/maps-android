@@ -7,8 +7,6 @@ import android.net.Uri;
 import android.util.Log;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 /**
@@ -21,38 +19,39 @@ public class MediaManager {
     private Context mContext;
 
     public MediaManager(Context context) {
-        mContext=context;
+        mContext = context;
+
         media.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
                 Log.i(TAG, "Noi xong!");
                 media.reset();
-                if (listSong.size() > 0){
+                if (listSong.size() > 0) {
 //                    speak(listSong.get(0));
                     speakFromURI(Uri.parse(listSong.get(0)));
-//                    listSong.remove(0);
                 }
             }
         });
     }
 
-    private void speak(String path){
-        if (media.isPlaying()){
+    private void speak(String path) {
+        if (media.isPlaying()) {
             return;
         }
 
         try {
-            media.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//            media.setAudioStreamType(AudioManager.STREAM_MUSIC);
             media.setDataSource(path);
             media.prepare();
             media.start();
+            listSong.remove(0);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void speakFromURI(Uri uri){
-        if (media.isPlaying()){
+    private void speakFromURI(Uri uri) {
+        if (media.isPlaying()) {
             return;
         }
 
@@ -67,11 +66,10 @@ public class MediaManager {
         }
     }
 
-    public void addToList(String path){
+    public void addToList(String path) {
         listSong.add(path);
 //        speak(path);
         speakFromURI(Uri.parse(path));
-//        listSong.remove(0);
     }
 
 
