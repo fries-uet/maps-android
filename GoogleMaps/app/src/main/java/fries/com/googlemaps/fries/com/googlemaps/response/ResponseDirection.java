@@ -1,13 +1,18 @@
 package fries.com.googlemaps.fries.com.googlemaps.response;
 
 import android.content.Context;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
+import com.google.android.gms.drive.internal.ListParentsRequest;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 import fries.com.googlemaps.Logger;
+import fries.com.googlemaps.MediaManager;
 import fries.com.googlemaps.ReadTextDownload;
 import fries.com.googlemaps.ReadTextStream;
 import org.json.JSONArray;
@@ -15,6 +20,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by tmq on 11/05/15.
@@ -122,15 +128,24 @@ public class ResponseDirection extends ResponseService{
 
     public boolean isDirecting;
     private int currentStep;
+    private MediaManager mediaMgr;
 
 
     private void resetData(){
+        mediaMgr = new MediaManager(mContext);
         listSteps = new ArrayList<>();
         waypoints = new ArrayList<>();
         polylineOptions = new PolylineOptions();
 
         isDirecting = false;
         currentStep = -1;
+        listSpeed = new ArrayList<>();
+        PointF pointF = new PointF(1,2);
+        listSpeed.add(pointF);
+        listSpeed.add(pointF);
+        listSpeed.add(pointF);
+        listSpeed.add(pointF);
+        listSpeed.add(pointF);
     }
 
     public boolean checkLocationAndSpeakDirection(Location currentLocation){
@@ -253,11 +268,13 @@ public class ResponseDirection extends ResponseService{
     private static final long MIN_TIME = 7500;  // Khoang thoi gian toi thieu giua 2 lan thong bao
     // Dua vao thoi gian cuoi cung doc thong bao, semaphore lam nhiem vu cho phep thuc hien tac vu tiep theo (vi du: doc thong bao tiep theo)
     private boolean semaphore(){
-        long currentTime = System.currentTimeMillis();
-        boolean result = (currentTime - lastTimeSpeak) >  MIN_TIME;
-        if (result) Logger.i(mContext, TAG, "Semapore = TRUE_" + (currentTime - lastTimeSpeak));
-        else Logger.i(mContext, TAG, "Semapore = FALSE_" + (currentTime - lastTimeSpeak));
-        return result;
+//        long currentTime = System.currentTimeMillis();
+//        boolean result = (currentTime - lastTimeSpeak) >  MIN_TIME;
+//        if (result) Logger.i(mContext, TAG, "Semapore = TRUE_" + (currentTime - lastTimeSpeak));
+//        else Logger.i(mContext, TAG, "Semapore = FALSE_" + (currentTime - lastTimeSpeak));
+//        return result;
+
+        return true;
     }
 
     private void speak(String text){
@@ -265,11 +282,14 @@ public class ResponseDirection extends ResponseService{
         lastTimeSpeak = System.currentTimeMillis();
         Logger.i(mContext, TAG, "Speak: " + text);
         Toast.makeText(mContext, "" + text, Toast.LENGTH_LONG).show();
-        readTextStream = new ReadTextStream(text);
-        readTextStream.run();
+//        new ReadTextStream(text).run();
 //        new ReadTextDownload().speakText(mContext, text);
+
+        String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";
+        String urlEncoded = Uri.encode(text, ALLOWED_URI_CHARS);
+        String urlMedia = "http://118.69.135.22/synthesis/file?voiceType=female&text=" + urlEncoded;
+        mediaMgr.addToList(urlMedia);
     }
-    private ReadTextStream readTextStream = null;
 
     // --------------------------------------- Get -----------------------------------------------------------------------
     private Location preLocation = null;
@@ -295,6 +315,21 @@ public class ResponseDirection extends ResponseService{
 
         return speed;
     }
+
+    private static final double DELTA_TIME = 5d;
+    private static final double DELTA_TIME_ALLOW = 0.2;
+    private ArrayList<PointF> listSpeed;
+
+    private double guessSpeed(double currentSpeed, double deltaTime){
+
+
+
+        return 1;
+    }
+    private float getTotalTimeInList(){
+        return 0;
+    }
+
 
     private LatLng firstPointInStep(int index){
         return listSteps.get(index).getPolyline().get(0);
