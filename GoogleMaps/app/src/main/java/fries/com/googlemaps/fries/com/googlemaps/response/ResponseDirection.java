@@ -303,11 +303,17 @@ public class ResponseDirection extends ResponseService{
         double delta = (currentTime-preTime)/(double)1000;
         double speed = distance/delta;
 
-        if (preSpeed>2 && speed>2*preSpeed){
-            speed = Math.sqrt(speed);
+//        if (preSpeed>2 && speed>2*preSpeed){
+//            speed = Math.sqrt(speed);
+//        }
+
+        speed = guessSpeed(speed, delta);
+
+        Logger.i(mContext, TAG, "Speed = " + (distance/delta) + "__ Guess Speed = " + speed + "________ Delta-T = " + delta);
+        for (PointF pointF : listSpeed){
+            Logger.i(mContext, TAG, "List: " + pointF.x + ", " + pointF.y);
         }
 
-        Logger.i(mContext, TAG, "Speed = " + speed + "________ Delta-T = " + delta);
 
         preLocation = currentLocation;
         preTime = currentTime;
@@ -316,18 +322,39 @@ public class ResponseDirection extends ResponseService{
         return speed;
     }
 
-    private static final double DELTA_TIME = 5d;
+    private static final double DELTA_TIME = 6d;
     private static final double DELTA_TIME_ALLOW = 0.2;
     private ArrayList<PointF> listSpeed;
 
     private double guessSpeed(double currentSpeed, double deltaTime){
+        listSpeed.add(new PointF((float) currentSpeed, (float) deltaTime));
 
+        while (getTotalTimeInList()>DELTA_TIME){
+            if (listSpeed.size()==2) break;
+            listSpeed.remove(0);
+        }
 
+        // Tinh gia tri trung binh
+        float mean = 0;
+        float time = 0;
+        for (PointF pointF : listSpeed){
+            mean += (pointF.x * pointF.y);
+            time += pointF.y;
+        }
 
-        return 1;
+        mean /= time;
+
+        listSpeed.remove(listSpeed.size()-1);
+        listSpeed.add(new PointF(mean, (float) deltaTime));
+
+        return mean;
     }
     private float getTotalTimeInList(){
-        return 0;
+        float time = 0;
+        for (PointF pointF : listSpeed){
+            time += pointF.y;
+        }
+        return time;
     }
 
 
