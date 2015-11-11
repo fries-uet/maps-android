@@ -73,6 +73,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         View view = mapFragment.getView();
         if (view!=null) view.setVisibility(View.VISIBLE);
 
+        checkLocationEnable();
     }
 
     @Override
@@ -391,14 +392,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             direction.isDirecting = true;
                             direction.speakInformation();
                             mMap.addPolyline(direction.getPolylineOptions());
-                            mMap.addMarker(new MarkerOptions()
-                                    .position(direction.getOrigin().getLatLng())
-                                    .title(direction.getOrigin().getFullName())
-                                    .flat(true));
-                            mMap.addMarker(new MarkerOptions()
-                                    .position(direction.getDestination().getLatLng())
-                                    .title(direction.getDestination().getFullName())
-                                    .flat(true));
+                            for (AddressMap point : direction.getWaypoints()){
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(point.getLatLng())
+                                        .title(point.getFullName())
+                                        .flat(true));
+                            }
                             break;
                     }
                 } catch (JSONException e) {

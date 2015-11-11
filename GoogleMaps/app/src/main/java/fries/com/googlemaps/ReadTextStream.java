@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -12,6 +13,7 @@ import android.widget.Toast;
 public class ReadTextStream extends Thread{
 //    private Context mContext;
     private String url;
+    private MediaPlayer player;
 
     public ReadTextStream(String text){
 //        mContext = c;
@@ -23,12 +25,14 @@ public class ReadTextStream extends Thread{
     @Override
     public void run() {
         try {
-            MediaPlayer player = new MediaPlayer();
+            player = new MediaPlayer();
             player.setAudioStreamType(AudioManager.STREAM_MUSIC);
             player.setDataSource(url);
             player.prepare();
+//            player.prepareAsync();
 //            Toast.makeText(mContext, "Play...", Toast.LENGTH_SHORT).show();
             player.start();
+
         } catch (Exception e) {
             // TODO: handle exception
         }

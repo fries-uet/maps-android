@@ -4,9 +4,11 @@ import android.content.Context;
 import android.location.Location;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 import fries.com.googlemaps.Logger;
+import fries.com.googlemaps.ReadTextDownload;
 import fries.com.googlemaps.ReadTextStream;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,31 +25,33 @@ public class ResponseDirection extends ResponseService{
     private String information;
     private AddressMap  origin,
                         destination;
+    private ArrayList<AddressMap> waypoints;
     private ArrayList<Step> listSteps;
 
     private PolylineOptions polylineOptions;
 
-
     public ResponseDirection(Context context, JSONObject json) {
         super(context, json);
+
     }
 
     @Override
     void analyzeJson(JSONObject json) throws JSONException {
         resetData();
 
-        origin      = getJsonAddress(json, "origin");
-        destination = getJsonAddress(json, "destination");
+        origin      = getJsonAddress(json.getJSONObject("origin"));
+        destination = getJsonAddress(json.getJSONObject("destination"));
         information = getJsonInformation(json);
         Log.i(TAG, "information: " + information);
         getListSteps(json);
+        getWayPoint(json);
     }
 
 
     // ---------------------------------- Get drection in JSON -------------------------------------------------------
 
-    private AddressMap getJsonAddress(JSONObject json, String type) throws JSONException {
-        JSONObject address = json.getJSONObject(type);
+    private AddressMap getJsonAddress(JSONObject address) throws JSONException {
+//        JSONObject address = json.getJSONObject(type);
         String shortName = address.getString("short_name");
         String fullName = address.getString("long_name");
         JSONObject geo = address.getJSONObject("geo");
@@ -69,6 +73,18 @@ public class ResponseDirection extends ResponseService{
                 ", mất " + duration;
     }
 
+    private void getWayPoint(JSONObject json) throws JSONException {
+        waypoints.add(origin);
+        waypoints.add(destination);
+        JSONArray array = json.getJSONArray("waypoints");
+        if (array.length()<=0) return;
+        for (int i=0; i<array.length(); i++){
+            JSONObject point = array.getJSONObject(i);
+            waypoints.add(getJsonAddress(point));
+            Logger.i(mContext, TAG, "waypoint " + i + getJsonAddress(point).getFullName());
+        }
+    }
+
     private void getListSteps(JSONObject json) throws JSONException {
         JSONArray steps = json.getJSONArray("steps");
         for (int i=0; i<steps.length(); i++){
@@ -85,7 +101,8 @@ public class ResponseDirection extends ResponseService{
 
     public void speakInformation(){
         if (information!=null){
-            new ReadTextStream(information).run();  // Dung run de doc het thong tin ma khong bi gian doan
+            speak(information);
+            lastTimeSpeak = lastTimeSpeak + MIN_TIME;      // Tao thoi gian gia de tri hoan viec doc thong tin Step
         }
     }
     public PolylineOptions getPolylineOptions(){
@@ -97,6 +114,9 @@ public class ResponseDirection extends ResponseService{
     public AddressMap getDestination(){
         return destination;
     }
+    public ArrayList<AddressMap> getWaypoints(){
+        return waypoints;
+    }
 
     // ------------------------------------- Direction ---------------------------------------------------------------
 
@@ -106,6 +126,7 @@ public class ResponseDirection extends ResponseService{
 
     private void resetData(){
         listSteps = new ArrayList<>();
+        waypoints = new ArrayList<>();
         polylineOptions = new PolylineOptions();
 
         isDirecting = false;
@@ -113,8 +134,9 @@ public class ResponseDirection extends ResponseService{
     }
 
     public boolean checkLocationAndSpeakDirection(Location currentLocation){
-        // Chi duogn cho doan khoi dau
+        // Chi duong cho doan khoi dau
         if (currentStep==-1){
+            if (!semaphore()) return false;      // Neu chua duoc phep noi thi thoat
             startDirecting(currentLocation);
             currentStep = 0;
         }
@@ -206,7 +228,7 @@ public class ResponseDirection extends ResponseService{
     private void directShortStep(double distance){
         if (typeStep==MEDIUM_STEP && semaphore()){       // Truoc do la doan duong trung, thi chuyen sang doan duong ngan
             typeStep = SHORT_STEP;
-            speak("Còn " + (int)distance + " mét nữa thì " + listSteps.get(currentStep+1).getInstructionsText());
+            speak("Còn " + (int)distance + " mét, chuẩn bị " + listSteps.get(currentStep+1).getInstructionsText());
         }
     }
 
@@ -227,14 +249,14 @@ public class ResponseDirection extends ResponseService{
     }
 
     // -------------------------------------- Simaphore: Speak ---------------------------------------------------------
-    private long lastTimeSpeak = 0;
-    private static final long MIN_TIME = 5000;
+    private long lastTimeSpeak = 0;             // Thoi gian thong bao truoc do
+    private static final long MIN_TIME = 7500;  // Khoang thoi gian toi thieu giua 2 lan thong bao
     // Dua vao thoi gian cuoi cung doc thong bao, semaphore lam nhiem vu cho phep thuc hien tac vu tiep theo (vi du: doc thong bao tiep theo)
     private boolean semaphore(){
         long currentTime = System.currentTimeMillis();
         boolean result = (currentTime - lastTimeSpeak) >  MIN_TIME;
-        if (result) Logger.i(mContext, TAG, "Semapore = TRUE");
-        else Logger.i(mContext, TAG, "Semapore = FALSE");
+        if (result) Logger.i(mContext, TAG, "Semapore = TRUE_" + (currentTime - lastTimeSpeak));
+        else Logger.i(mContext, TAG, "Semapore = FALSE_" + (currentTime - lastTimeSpeak));
         return result;
     }
 
@@ -242,8 +264,12 @@ public class ResponseDirection extends ResponseService{
         // Danh dau thoi gian bat dau doc thong bao
         lastTimeSpeak = System.currentTimeMillis();
         Logger.i(mContext, TAG, "Speak: " + text);
-        new ReadTextStream(text).run();
+        Toast.makeText(mContext, "" + text, Toast.LENGTH_LONG).show();
+        readTextStream = new ReadTextStream(text);
+        readTextStream.run();
+//        new ReadTextDownload().speakText(mContext, text);
     }
+    private ReadTextStream readTextStream = null;
 
     // --------------------------------------- Get -----------------------------------------------------------------------
     private Location preLocation = null;
@@ -277,14 +303,14 @@ public class ResponseDirection extends ResponseService{
     // Tinh khoang cach giua hai Toa do tren ban do
     public double distance(double lat1, double lng1, double lat2, double lng2) {
         double r = 6371000;
-        double lat_x = Math.toRadians(lat1);
-        double lat_y = Math.toRadians(lat2);
+        double latX = Math.toRadians(lat1);
+        double latY = Math.toRadians(lat2);
 
-        double delta_lat = Math.toRadians(lat2 - lat1);
-        double delta_lng = Math.toRadians(lng2 - lng1);
+        double deltaLat = Math.toRadians(lat2 - lat1);
+        double deltaLng = Math.toRadians(lng2 - lng1);
 
-        double a = Math.sin(delta_lat / 2) * Math.sin(delta_lat / 2) +
-                Math.cos(lat_x) * Math.cos(lat_y) * Math.sin(delta_lng / 2) * Math.sin(delta_lng / 2);
+        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                Math.cos(latX) * Math.cos(latY) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return r * c;
