@@ -28,6 +28,15 @@ public class Step {
         }
     }
 
+    // Tao mot Step ao o diem dich
+    public Step(AddressMap destination){
+        maneuver = "destination";
+        instructionsText = " tới " + destination.getShortName();
+        instructionsInfo = " tới " + destination.getFullName();
+        polyline = new ArrayList<>();
+        polyline.add(destination.getLatLng());
+    }
+
     private void setDataFromJson(JSONObject json) throws JSONException {
         maneuver = json.getString("maneuver");
 

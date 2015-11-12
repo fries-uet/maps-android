@@ -77,7 +77,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         checkLocationEnable();
         mediaMgr = new MediaManager(this);
-//        mediaMgr.addToList("Xin chào, tôi là u e tê fries");
     }
 
     @Override
