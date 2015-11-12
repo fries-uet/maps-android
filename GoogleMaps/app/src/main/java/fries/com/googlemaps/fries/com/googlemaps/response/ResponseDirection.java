@@ -102,6 +102,7 @@ public class ResponseDirection extends ResponseService{
                 polylineOptions.add(latLng);
             }
         }
+        listSteps.add(new Step(destination));
     }
 
     // ------------------------------------ Speak --------------------------------------------------------------------
@@ -149,7 +150,6 @@ public class ResponseDirection extends ResponseService{
     public boolean checkLocationAndSpeakDirection(Location currentLocation){
         // Chi duong cho doan khoi dau
         if (currentStep==-1){
-            if (!semaphore()) return false;      // Neu chua duoc phep noi thi thoat
             startDirecting(currentLocation);
             currentStep = 0;
         }
@@ -215,7 +215,8 @@ public class ResponseDirection extends ResponseService{
     private int currentIndex = MAX_VALUE;
     private void directLongStep(double time, double distance){
         int index = (int) time/LONG_STEP;
-        if (index<currentIndex && semaphore()){
+        // Neu index nho hon index truoc do && thoi gian sau lan thong bao truoc thoa man semaphore
+        if (/*index<currentIndex &&*/ semaphore()){
             Logger.i(mContext, TAG + "_directLongStep", "CurrentIndex = " + currentIndex);
             typeStep = LONG_STEP;
             currentIndex = index;
@@ -228,7 +229,7 @@ public class ResponseDirection extends ResponseService{
     *       If speed = 10m/s, Distance >= 200 meter
     * */
     private void directMediumStep(double distance){
-        if (typeStep==LONG_STEP && semaphore()){       // Truoc do la doan duong dai, thi chuyen sang doan duong trung
+        if (typeStep==LONG_STEP){       // Truoc do la doan duong dai, thi chuyen sang doan duong trung
             typeStep = MEDIUM_STEP;
             speak("Còn " + (int)distance + " mét nữa thì " + listSteps.get(currentStep+1).getInstructionsText());
         }
@@ -239,7 +240,7 @@ public class ResponseDirection extends ResponseService{
     *       If speed = 10m/s, Distance < 200 meter
     * */
     private void directShortStep(double distance){
-        if (typeStep==MEDIUM_STEP && semaphore()){       // Truoc do la doan duong trung, thi chuyen sang doan duong ngan
+        if (typeStep==MEDIUM_STEP){       // Truoc do la doan duong trung, thi chuyen sang doan duong ngan
             typeStep = SHORT_STEP;
             speak("Còn " + (int)distance + " mét, chuẩn bị " + listSteps.get(currentStep+1).getInstructionsText());
         }
@@ -263,21 +264,20 @@ public class ResponseDirection extends ResponseService{
 
     // -------------------------------------- Simaphore: Speak ---------------------------------------------------------
     private long lastTimeSpeak = 0;             // Thoi gian thong bao truoc do
-    private static final long MIN_TIME = 7500;  // Khoang thoi gian toi thieu giua 2 lan thong bao
+    private static final long MIN_TIME = 60000;  // Khoang thoi gian toi thieu giua 2 lan thong bao
     // Dua vao thoi gian cuoi cung doc thong bao, semaphore lam nhiem vu cho phep thuc hien tac vu tiep theo (vi du: doc thong bao tiep theo)
     private boolean semaphore(){
-//        long currentTime = System.currentTimeMillis();
-//        boolean result = (currentTime - lastTimeSpeak) >  MIN_TIME;
-//        if (result) Logger.i(mContext, TAG, "Semapore = TRUE_" + (currentTime - lastTimeSpeak));
-//        else Logger.i(mContext, TAG, "Semapore = FALSE_" + (currentTime - lastTimeSpeak));
-//        return result;
-
-        return true;
+        long currentTime = System.currentTimeMillis();
+        boolean result = (currentTime - lastTimeSpeak) >  MIN_TIME;
+        if (result) Logger.i(mContext, TAG, "Semapore = TRUE_" + (currentTime - lastTimeSpeak));
+        else Logger.i(mContext, TAG, "Semapore = FALSE_" + (currentTime - lastTimeSpeak));
+        return result;
     }
 
     private void speak(String text){
         // Danh dau thoi gian bat dau doc thong bao
-        lastTimeSpeak = System.currentTimeMillis();
+        // Neu la LONG_STEP thi thong bao sau MIN_TIME
+        if (typeStep == LONG_STEP)  lastTimeSpeak = System.currentTimeMillis();
         Logger.i(mContext, TAG, "Speak: " + text);
         Toast.makeText(mContext, "" + text, Toast.LENGTH_LONG).show();
 
@@ -316,7 +316,6 @@ public class ResponseDirection extends ResponseService{
     }
 
     private static final double DELTA_TIME = 6d;
-    private static final double DELTA_TIME_ALLOW = 0.2;
     private ArrayList<PointF> listSpeed;
 
     private double guessSpeed(double currentSpeed, double deltaTime){
@@ -335,8 +334,9 @@ public class ResponseDirection extends ResponseService{
             time += pointF.y;
         }
 
-        mean /= time;
+        mean /= time;   // Tinh gia tri trung binh
 
+        // Xoa va thay the gia tri Speed moi
         listSpeed.remove(listSpeed.size()-1);
         listSpeed.add(new PointF(mean, (float) deltaTime));
 
