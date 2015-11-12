@@ -24,40 +24,26 @@ public class MediaManager {
         media.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-                Log.i(TAG, "Noi xong!");
-                media.reset();
-                if (listSong.size() > 0) {
-//                    speak(listSong.get(0));
-                    speakFromURI(Uri.parse(listSong.get(0)));
-                }
+            Log.i(TAG, "Noi xong!");
+            media.reset();
+            if (listSong.size() > 0) {
+                speak(listSong.get(0));
+            }
             }
         });
     }
 
-    private void speak(String path) {
-        if (media.isPlaying()) {
-            return;
-        }
-
-        try {
-//            media.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            media.setDataSource(path);
-            media.prepare();
-            media.start();
-            listSong.remove(0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void speakFromURI(Uri uri) {
+    private void speak(String text) {
         if (media.isPlaying()) {
             return;
         }
 
         try {
             media.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            media.setDataSource(mContext, uri);
+            String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";
+            String urlEncoded = Uri.encode(text, ALLOWED_URI_CHARS);
+            String urlMedia = "http://118.69.135.22/synthesis/file?voiceType=female&text=" + urlEncoded;
+            media.setDataSource(urlMedia);
             media.prepare();
             media.start();
             listSong.remove(0);
@@ -66,10 +52,25 @@ public class MediaManager {
         }
     }
 
-    public void addToList(String path) {
-        listSong.add(path);
-//        speak(path);
-        speakFromURI(Uri.parse(path));
+//    private void speakFromURI(Uri uri) {
+//        if (media.isPlaying()) {
+//            return;
+//        }
+//
+//        try {
+//            media.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//            media.setDataSource(mContext, uri);
+//            media.prepare();
+//            media.start();
+//            listSong.remove(0);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    public void addToList(String text) {
+        listSong.add(text);
+        speak(text);
     }
 
 

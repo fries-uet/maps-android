@@ -46,6 +46,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
 
+    // MediaManager tao mot queue de dong bo viec doc thong bao
+    private MediaManager mediaMgr;
+
     private FloatingActionButton    fabRecordVoice;
     private LinearLayout    notificationDirection;
     private TextView        txtOrigin,
@@ -53,12 +56,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             txtDistance,
                             txtDuration;
     private ListView    listStep;
-    private ListStepsAdapter listStepsAdapter;
+//    private ListStepsAdapter listStepsAdapter;
     private ImageButton btnCancelDirection,
                         btnAcceptDirection;
 
 
-    private StepsDirection stepsDirection = new StepsDirection(MapsActivity.this);
     private ResponseDirection direction;
 
     @Override
@@ -74,6 +76,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (view!=null) view.setVisibility(View.VISIBLE);
 
         checkLocationEnable();
+        mediaMgr = new MediaManager(this);
+//        mediaMgr.addToList("Xin chào, tôi là u e tê fries");
     }
 
     @Override
@@ -173,7 +177,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         txtDistance     = (TextView) findViewById(R.id.txtDistance);
         txtDuration     = (TextView) findViewById(R.id.txtDuration);
 
-        listStepsAdapter = new ListStepsAdapter(this);
+//        listStepsAdapter = new ListStepsAdapter(this);
         listStep        = (ListView) findViewById(R.id.listSteps);
 
         btnCancelDirection  = (ImageButton) findViewById(R.id.btnCancelDirection);
@@ -188,26 +192,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        View.OnClickListener onClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                switch (v.getId()){
-                    case R.id.btnCancelDirection:
-                        notificationDirection.setVisibility(View.GONE);
-                        Animation myAni1 = AnimationUtils.loadAnimation(MapsActivity.this, R.anim.anim_slide_out_top);
-                        notificationDirection.startAnimation(myAni1);
-                        //resetDirection
-
-                        break;
-                    case R.id.btnAcceptDirection:
-                        stepsDirection.startDirecting();    // Bat dau chi duong bang giong noi, voi du lieu da duoc nap san vao stepsDirection
-                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(getMyLocationLatLng(),16));
-                        break;
-                }
-            }
-        };
-        btnAcceptDirection.setOnClickListener(onClickListener);
-        btnCancelDirection.setOnClickListener(onClickListener);
+//        View.OnClickListener onClickListener = new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                switch (v.getId()){
+//                    case R.id.btnCancelDirection:
+//                        notificationDirection.setVisibility(View.GONE);
+//                        Animation myAni1 = AnimationUtils.loadAnimation(MapsActivity.this, R.anim.anim_slide_out_top);
+//                        notificationDirection.startAnimation(myAni1);
+//                        //resetDirection
+//
+//                        break;
+//                    case R.id.btnAcceptDirection:
+//                        stepsDirection.startDirecting();    // Bat dau chi duong bang giong noi, voi du lieu da duoc nap san vao stepsDirection
+//                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(getMyLocationLatLng(),16));
+//                        break;
+//                }
+//            }
+//        };
+//        btnAcceptDirection.setOnClickListener(onClickListener);
+//        btnCancelDirection.setOnClickListener(onClickListener);
     }
 
     @Override
@@ -281,29 +285,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    private void showNotificationDirection(){//--------------------------------------------------------- Chu y ------------------------------------------------
-        // Set Layout
-        notificationDirection.setVisibility(View.VISIBLE);
-        Animation myAni2 = AnimationUtils.loadAnimation(MapsActivity.this, R.anim.anim_slide_in_top);
-        notificationDirection.startAnimation(myAni2);
-
-        notificationDirection.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mMap.setPadding(0,notificationDirection.getHeight(),0,0);
-                Logger.i(MapsActivity.this, TAG, "Set padding for Map: top = " + notificationDirection.getHeight());
-            }
-        }, 2000);
-
-        // Set Component
-        txtOrigin.setText(stepsDirection.getOrigin());
-        txtDestination.setText(stepsDirection.getDestination());
-        txtDistance.setText(stepsDirection.getDistance());
-        txtDuration.setText(stepsDirection.getDuration());
-
-        listStepsAdapter.setListSteps(stepsDirection.getListSteps());
-        listStep.setAdapter(listStepsAdapter);
-    }
+//    private void showNotificationDirection(){//--------------------------------------------------------- Chu y ------------------------------------------------
+//        // Set Layout
+//        notificationDirection.setVisibility(View.VISIBLE);
+//        Animation myAni2 = AnimationUtils.loadAnimation(MapsActivity.this, R.anim.anim_slide_in_top);
+//        notificationDirection.startAnimation(myAni2);
+//
+//        notificationDirection.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                mMap.setPadding(0,notificationDirection.getHeight(),0,0);
+//                Logger.i(MapsActivity.this, TAG, "Set padding for Map: top = " + notificationDirection.getHeight());
+//            }
+//        }, 2000);
+//
+//        // Set Component
+//        txtOrigin.setText(stepsDirection.getOrigin());
+//        txtDestination.setText(stepsDirection.getDestination());
+//        txtDistance.setText(stepsDirection.getDistance());
+//        txtDuration.setText(stepsDirection.getDuration());
+//
+//        listStepsAdapter.setListSteps(stepsDirection.getListSteps());
+//        listStep.setAdapter(listStepsAdapter);
+//    }
 
     //------------------------------------------------------------------------------------------
     @Override
@@ -378,17 +382,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         case ResponseService.TYPE_POST_TRAFFIC:
                         case ResponseService.TYPE_MY_LOCATION:
                             ResponseSpeak speak = new ResponseSpeak(MapsActivity.this, response);
-                            speak.speak();
+                            speak.speak(mediaMgr);
                             break;
                         case ResponseService.TYPE_GET_TRAFFIC:
                             ResponseGetTraffic getTraffic = new ResponseGetTraffic(MapsActivity.this, response);
-                            getTraffic.speak();
+                            getTraffic.speak(mediaMgr);
                             break;
                         case ResponseService.TYPE_DIRECTION:
                         case ResponseService.TYPE_DIRECTION_COORDINATE_TO_TEXT:
                         case ResponseService.TYPE_DIRECTION_TEXT_TO_TEXT:
                             mMap.clear();
-                            direction = new ResponseDirection(MapsActivity.this, response);
+                            direction = new ResponseDirection(MapsActivity.this, response, mediaMgr);
                             direction.isDirecting = true;
                             direction.speakInformation();
                             mMap.addPolyline(direction.getPolylineOptions());

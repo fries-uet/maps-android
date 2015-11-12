@@ -1,7 +1,7 @@
 package fries.com.googlemaps.fries.com.googlemaps.response;
 
 import android.content.Context;
-import fries.com.googlemaps.ReadTextStream;
+import fries.com.googlemaps.MediaManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -25,18 +25,16 @@ public class ResponseSpeak extends ResponseService{
         }
     }
 
-    public void speak(){
-//        new ReadTextStream(answer).start(); // Neu nhieu cau cung doc se bi ngat giua chung
-//        new ReadTextStream(answer).run(); // Giong noi bi doc chong len nhau khi thuc hien nhieu cau noi
+    public void speak(MediaManager mediaMgr){
         switch (type){
             case TYPE_SPEAK:
-                new ReadTextStream(answer).start();
+                mediaMgr.addToList(answer);
                 break;
             case TYPE_MY_LOCATION:
-                if (myLocation!=null) new ReadTextStream("Bạn đang ở " + myLocation).start();
+                if (myLocation!=null) mediaMgr.addToList("Bạn đang ở " + myLocation);
                 break;
             case TYPE_POST_TRAFFIC:
-                new ReadTextStream("Cám ơn bạn đã phản hồi thông tin giao thông").start();
+                mediaMgr.addToList("Cám ơn bạn đã phản hồi thông tin giao thông");
                 break;
         }
 

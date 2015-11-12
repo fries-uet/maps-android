@@ -2,7 +2,7 @@ package fries.com.googlemaps.fries.com.googlemaps.response;
 
 import android.content.Context;
 import android.util.Log;
-import fries.com.googlemaps.ReadTextStream;
+import fries.com.googlemaps.MediaManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -39,7 +39,7 @@ public class ResponseGetTraffic extends ResponseService{
         agoText = data.getString("ago_text");
     }
 
-    public void speak(){
+    public void speak(MediaManager mediaManager){
         String text = "";
         if (!dataIsInDatabase) text = "Không có thông tin về tuyến đường này, mong bạn thông cảm";
         else {
@@ -47,7 +47,7 @@ public class ResponseGetTraffic extends ResponseService{
             else    text = name + " đang lưu thông bình thường";
         }
         Log.i(TAG, text);
-        new ReadTextStream(text).start();
+        mediaManager.addToList(text);
     }
 
 }

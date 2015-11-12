@@ -14,7 +14,6 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import fries.com.googlemaps.Logger;
 import fries.com.googlemaps.MediaManager;
 import fries.com.googlemaps.ReadTextDownload;
-import fries.com.googlemaps.ReadTextStream;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,9 +35,11 @@ public class ResponseDirection extends ResponseService{
 
     private PolylineOptions polylineOptions;
 
-    public ResponseDirection(Context context, JSONObject json) {
-        super(context, json);
+    private MediaManager mediaMgr;
 
+    public ResponseDirection(Context context, JSONObject json, MediaManager mediaManager) {
+        super(context, json);
+        mediaMgr = mediaManager;
     }
 
     @Override
@@ -128,11 +129,8 @@ public class ResponseDirection extends ResponseService{
 
     public boolean isDirecting;
     private int currentStep;
-    private MediaManager mediaMgr;
-
 
     private void resetData(){
-        mediaMgr = new MediaManager(mContext);
         listSteps = new ArrayList<>();
         waypoints = new ArrayList<>();
         polylineOptions = new PolylineOptions();
@@ -282,13 +280,8 @@ public class ResponseDirection extends ResponseService{
         lastTimeSpeak = System.currentTimeMillis();
         Logger.i(mContext, TAG, "Speak: " + text);
         Toast.makeText(mContext, "" + text, Toast.LENGTH_LONG).show();
-//        new ReadTextStream(text).run();
-//        new ReadTextDownload().speakText(mContext, text);
 
-        String ALLOWED_URI_CHARS = "@#&=*+-_.,:!?()/~'%";
-        String urlEncoded = Uri.encode(text, ALLOWED_URI_CHARS);
-        String urlMedia = "http://118.69.135.22/synthesis/file?voiceType=female&text=" + urlEncoded;
-        mediaMgr.addToList(urlMedia);
+        mediaMgr.addToList(text);
     }
 
     // --------------------------------------- Get -----------------------------------------------------------------------

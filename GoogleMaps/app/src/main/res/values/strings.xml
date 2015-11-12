@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Google Maps</string>
+    <string name="app_name">Fries Map</string>
     <string name="title_activity_maps">Fries Map</string>
     <string name="edt_voice">Your voice</string>
     <string name="btn_speak">Speak</string>
