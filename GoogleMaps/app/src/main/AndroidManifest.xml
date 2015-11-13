@@ -17,7 +17,7 @@
     <application
             android:name=".SmacApplication"
             android:allowBackup="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ico_app"
             android:label="@string/app_name"
             android:supportsRtl="true"
             android:theme="@style/AppTheme">

@@ -185,7 +185,10 @@ public class ResponseDirection extends ResponseService{
     private int preDistanceState = DISTANCE_DECREASE;
 
     private void startDirectingStep(Location currentLocation){
-        if (currentStep+1>=listSteps.size()) return;    // Out of bound
+        if (currentStep+1>=listSteps.size()){
+            isDirecting = false;
+            return;    // Out of bound
+        }
 
         double distance = distance(currentLocation.getLatitude(), currentLocation.getLongitude(),
                                     firstPointInStep(currentStep+1).latitude, firstPointInStep(currentStep+1).longitude);
@@ -264,7 +267,7 @@ public class ResponseDirection extends ResponseService{
 
     // -------------------------------------- Simaphore: Speak ---------------------------------------------------------
     private long lastTimeSpeak = 0;             // Thoi gian thong bao truoc do
-    private static final long MIN_TIME = 60000;  // Khoang thoi gian toi thieu giua 2 lan thong bao
+    private static final long MIN_TIME = 30*1000;  // Khoang thoi gian toi thieu giua 2 lan thong bao
     // Dua vao thoi gian cuoi cung doc thong bao, semaphore lam nhiem vu cho phep thuc hien tac vu tiep theo (vi du: doc thong bao tiep theo)
     private boolean semaphore(){
         long currentTime = System.currentTimeMillis();

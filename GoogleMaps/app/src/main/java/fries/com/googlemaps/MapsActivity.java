@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.BitmapFactory;
 import android.location.*;
 import android.provider.Settings;
 import android.speech.RecognizerIntent;
@@ -29,6 +30,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.*;
 import com.google.android.gms.maps.model.*;
 import fries.com.googlemaps.fries.com.googlemaps.response.*;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -91,6 +93,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Show rationale and request permission.
         }
 
+        initViews();
 
         // ------------------------------ Tam thoi tat che do clik tren map----------------------------------------------------------------------------------------------------
         mMap.setOnMapClickListener(this);
@@ -99,6 +102,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
             @Override
             public void onMyLocationChange(Location location) {
+                sendRequestToGetAllTraffic();
+
                 if (direction==null || !direction.isDirecting) return;
 
                 direction.checkLocationAndSpeakDirection(location);
@@ -111,8 +116,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         setLanguage();
 
-        initViews();
-
         initViewsVoiceText();
 
         // Move to Ha Noi
@@ -124,7 +127,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-
+    private long lastTimeGetAllTraffic = System.currentTimeMillis() - 295*1000;
+    private void sendRequestToGetAllTraffic(){
+        final long currentTime = System.currentTimeMillis();
+        if ((currentTime-300*1000>lastTimeGetAllTraffic)){
+            if (!checkLocationEnable()) {
+                sendRequest("get_all_traffic_congestion");
+                lastTimeGetAllTraffic = currentTime;
+            }
+        }
+    }
 
 
     //-------------------------- Setting -------------------------------------------------------------------
@@ -363,7 +375,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
         }
 
-        RequestQueue queue = Volley.newRequestQueue(this);
         JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.POST, URL_REQUEST, jsonObject, new Response.Listener<JSONObject>() {
 
             @Override
@@ -399,8 +410,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 mMap.addMarker(new MarkerOptions()
                                         .position(point.getLatLng())
                                         .title(point.getFullName())
-                                        .flat(true));
+                                        .flat(false));
                             }
+                            break;
+                        case ResponseService.TYPE_GET_ALL_TRAFFIC:
+                            getAllTraffic(response);
                             break;
                     }
                 } catch (JSONException e) {
@@ -425,6 +439,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         Log.i(TAG, "Finish");
+    }
+
+
+    private void getAllTraffic(JSONObject json) throws JSONException {
+        mMap.clear();
+        JSONArray data = json.getJSONArray("data");
+        Logger.i(this, TAG, "Get all traffic: " + data.length());
+        for (int i=0; i<data.length(); i++){
+            JSONObject street = data.getJSONObject(i);
+            String time = street.getString("ago_text");
+            double lat = street.getDouble("latitude");
+            double lng = street.getDouble("longitude");
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(lat, lng))
+                    .title(time)
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ico_congestion))
+                    .flat(false));
+        }
     }
 
 

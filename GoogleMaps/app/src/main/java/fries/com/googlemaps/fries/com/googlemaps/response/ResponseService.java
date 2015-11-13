@@ -22,6 +22,7 @@ public abstract class ResponseService {
     public static final String TYPE_DIRECTION                       = "direction";
     public static final String TYPE_DIRECTION_COORDINATE_TO_TEXT    = "coor_text";
     public static final String TYPE_DIRECTION_TEXT_TO_TEXT          = "text_text";
+    public static final String TYPE_GET_ALL_TRAFFIC                 = "get_all_traffic";
 
     protected Context mContext;
     protected String type;

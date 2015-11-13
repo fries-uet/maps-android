@@ -43,8 +43,8 @@ public class MediaManager {
         media.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-//                File file = new File(listPath.get(0));
-//                file.delete();
+                File file = new File(listPath.get(0));
+                file.delete();
                 listPath.remove(0);
                 Log.i(TAG, "Noi xong!");
                 media.reset();
@@ -134,7 +134,7 @@ public class MediaManager {
     private String mHost = "http://118.69.135.22";
 
     public static final String PATH_DOWNLOAD_AUDIO = Environment.getExternalStorageDirectory().getPath() +
-            "/" + Environment.DIRECTORY_MUSIC + "/";
+            "/" + Environment.DIRECTORY_DOWNLOADS + "/";
 
     public static final String FILE_NAME_DEFAULT = "audio_map";
     public static final String FILE_EXTENTION_DEFAULT = ".wav";
@@ -152,6 +152,8 @@ public class MediaManager {
             urlConnection.setDoOutput(true);
             urlConnection.connect();
             Log.i(TAG, "Connected to server'");
+
+
 
             InputStream inputStream = urlConnection.getInputStream();
             File file = new File(filePath);
